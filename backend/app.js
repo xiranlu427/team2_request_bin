@@ -1,12 +1,15 @@
-//Import environment variables create variables
+//Import environment variables
 const env = require("./lib/config");
 const HOST = env.HOST;
 const PORT = env.PORT;
 
-const express = require("express");
-
 //Create an express server
+const express = require("express");
 const server = express();
+
+//Import and use 'morgan'
+const morgan = require("morgan");
+server.use(morgan("dev"));
 
 server.get("/", (req, res) => {
   res.send("Hello world!");
