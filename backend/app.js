@@ -14,6 +14,7 @@ server.use(morgan("dev"));
 //Import and use express validator to check the format of the params
 const { body, validationResult } = require("express-validator");
 
+//Basic example request handling (excluding validation)
 server.get("/", (req, res) => {
   res.send("Hello world!");
 });
