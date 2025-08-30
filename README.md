@@ -13,7 +13,7 @@ Benjamin Stevens, Saurabh Kamboj, Tyler McGraw, and Xiran Lu
 ## SETUP
 
 1. Navigate to the backend directory and install packages using "npm install"
-2. Create a .env file with the keys:
+2. Create an .env file with the keys:
    - HOST
    - PORT
    - SECRET
