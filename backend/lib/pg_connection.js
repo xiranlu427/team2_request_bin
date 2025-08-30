@@ -3,7 +3,7 @@
 // const CONNECTION = {
 //   user: config.PGUSER,
 //   password: config.PGPASSWORD,
-//   database: config.DATABASE,
+//   database: config.PGDATABASE,
 // };
 
 // function logQuery(statement, parameters) {

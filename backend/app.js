@@ -2,7 +2,6 @@
 const env = require("./lib/config");
 const HOST = env.HOST;
 const PORT = env.PORT;
-const data = {};
 
 //Create an express server
 const express = require("express");
@@ -48,7 +47,22 @@ server.all("/:endpoint", async (req, res) => {
 
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
-  server.send("NOT IMPLEMENTED YET");
+  //Don't allow non-local requests to this endpoint
+  if (!req.headers.host.includes("localhost")) {
+    res.status(404).send();
+  }
+
+  let endpoint = req.params.endpoint;
+
+  try {
+    let basketCleared = await pgApi.clearBasket(endpoint);
+    if (!basketCleared) throw new Error("Basket couldn't be cleared.");
+
+    res.status(204).send();
+  } catch (e) {
+    console.error(e);
+    res.status(404).send();
+  }
 });
 
 //Error handler (Last Line of Defense)
