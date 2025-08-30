@@ -1,13 +1,14 @@
 const pgQuery = require("./pg_connection");
 
 module.exports = class PostgreSQL {
+  //Returns the id of a basket based on an endpoint
   async getBasketId(urlEndpoint) {
     try {
       let basketId = await pgQuery(
         "SELECT id FROM baskets WHERE url_endpoint = $1",
         urlEndpoint
       );
-      return basketId;
+      return basketId.rows[0].id;
     } catch (e) {
       console.error(`Couldn't get basketId: ${e}`);
       return false;

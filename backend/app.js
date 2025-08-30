@@ -2,17 +2,19 @@
 const env = require("./lib/config");
 const HOST = env.HOST;
 const PORT = env.PORT;
+const data = {};
 
 //Create an express server
 const express = require("express");
 const server = express();
 
+//Create API access variable
+const PostgreSQL = require("./lib/pg_api");
+const pgApi = new PostgreSQL();
+
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
 server.use(morgan("dev"));
-
-//Import and use express validator to check the format of the params
-const { body, validationResult } = require("express-validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
@@ -21,12 +23,27 @@ server.use(express.text({ type: "*/*" }));
 server.all("/:endpoint", async (req, res) => {
   let method = req.method;
   let headers = JSON.stringify(req.headers);
-  let body = req.body;
+  let body = req.body; //Stored in Mongo
   let endpoint = req.params.endpoint;
 
-  console.log(endpoint);
+  //Add the body to Mongo and get a document ID
+  let documentId = body ? Math.random() * 1000 : undefined;
 
-  res.status(200).send();
+  // Try adding the request to the SQL database if it fails, send 404 error
+  try {
+    let requestAdded = await pgApi.addRequest(
+      endpoint,
+      method,
+      headers,
+      documentId
+    );
+    if (!requestAdded) throw new Error("Request couldn't be added.");
+
+    res.status(200).send();
+  } catch (e) {
+    console.error(e);
+    res.status(404).send();
+  }
 });
 
 //Handles requests to clear the basket
