@@ -7,12 +7,21 @@ const PORT = env.PORT;
 const express = require("express");
 const server = express();
 
-//Import and use 'morgan'
+//Import and use 'morgan' to log requests
 const morgan = require("morgan");
 server.use(morgan("dev"));
 
+//Import and use express validator to check the format of the params
+const { body, validationResult } = require("express-validator");
+
 server.get("/", (req, res) => {
   res.send("Hello world!");
+});
+
+//Error handler (Last Line of Defense)
+server.use((error, req, res, _next) => {
+  console.log(error);
+  res.status(404).render("error", { error: error });
 });
 
 server.listen(PORT, () => {
