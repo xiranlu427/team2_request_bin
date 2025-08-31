@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './App.css';
 
 function App() {
-  const [basketCount, setBasketCount] = useState(0);
+  const [baskets, setBaskets] = useState([]);
 
   return (
     <div>
