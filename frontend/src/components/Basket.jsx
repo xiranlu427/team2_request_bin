@@ -11,6 +11,9 @@ const Basket = ({ requests }) => {
           Requests collected at 
           <kbd>regular-seahorse-mighty.ngrok-free.app{urlEndpoint}</kbd>
         </p>
+        <p>
+          Total requests: {requests.length}
+        </p>
       </div>
       <ul>
         {requests.map((request) => {
