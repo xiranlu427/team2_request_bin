@@ -9,42 +9,39 @@ const Basket = ({ requests }) => {
   const deleteBasket = () => {
     // Pending -> Better error handling, can use `useState` to setErrorMessage on `/`
     services.deleteBasket(urlEndpoint)
-      .catch(() => [
+      .catch(() => {
         console.log('The basket does not exist!')
-      ])
+      })
       .finally(() => {
         navigate('/');
       })
   };
 
-  const uri = () => {
-    return (
-      <kbd>regular-seahorse-mighty.ngrok-free.app/{urlEndpoint}</kbd>
-    )
-  };
+  // Can use `window.location.origin` here instead of hardcoding the domain
+  const uri = `regular-seahorse-mighty.ngrok-free.app/${urlEndpoint}`
 
   return (
     <div>
       <h1>Basket: {urlEndpoint}</h1>
       <div>
-        <button onClick={() => deleteBasket()}>Delete basket</button>
+        <button onClick={deleteBasket}>Delete basket</button>
       </div>
       <div>
-        { requests.length !== 0
+        { requests.length > 0
           ? <>
               <p>
-                Requests collected at {uri()}<br />
+                Requests collected at <kbd>{uri}</kbd><br />
                 Total requests: {requests.length}
               </p>
               <ul>
                 {requests.map((request) => {
-                  return <Request request={request} />
+                  return <Request key={JSON.stringify(request)} request={request} />
                 })}
               </ul>
             </>
           : <>
               <h2>Empty basket!</h2>
-              <p>Send requests at {uri()}</p>
+              <p>Send requests at <kbd>{uri}</kbd></p>
             </>
         }
       </div>
