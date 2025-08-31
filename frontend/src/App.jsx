@@ -1,8 +1,4 @@
 import { useState } from 'react';
-import {
-  Routes, Route, Link
-} from 'react-router-dom';
-import Basket from './components/Basket';
 import './App.css';
 
 function App() {
