@@ -38,7 +38,7 @@ const Basket = ({ requests }) => {
               </p>
               <ul>
                 {requests.map((request) => {
-                  <Request request={request}/>
+                  return <Request request={request} />
                 })}
               </ul>
             </>
