@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import services from '../services/services.js';
+import services from '../services/services';
+import Request from './Request';
 
 const Basket = ({ requests }) => {
   const urlEndpoint = useParams().url_endpoint;
@@ -16,23 +17,37 @@ const Basket = ({ requests }) => {
       })
   }
 
+  const uri = () => {
+    return (
+      <kbd>regular-seahorse-mighty.ngrok-free.app/{urlEndpoint}</kbd>
+    )
+  }
+
   return (
     <div>
-      <div>
-        <h1>Basket: {urlEndpoint}</h1>
-        <p>
-          Requests collected at <kbd>regular-seahorse-mighty.ngrok-free.app/{urlEndpoint}</kbd><br />
-          Total requests: {requests.length}
-        </p>
-      </div>
+      <h1>Basket: {urlEndpoint}</h1>
       <div>
         <button onClick={() => deleteBasket()}>Delete basket</button>
       </div>
-      <ul>
-        {requests.map((request) => {
-          <Request request={request}/>
-        })}
-      </ul>
+      <div>
+        { requests.length !== 0
+          ? <>
+              <p>
+                Requests collected at {uri()}<br />
+                Total requests: {requests.length}
+              </p>
+              <ul>
+                {requests.map((request) => {
+                  <Request request={request}/>
+                })}
+              </ul>
+            </>
+          : <>
+              <h2>Empty basket!</h2>
+              <p>Send requests at {uri()}</p>
+            </>
+        }
+      </div>
     </div>
   );
 };
