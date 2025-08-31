@@ -15,13 +15,13 @@ const Basket = ({ requests }) => {
       .finally(() => {
         navigate('/');
       })
-  }
+  };
 
   const uri = () => {
     return (
       <kbd>regular-seahorse-mighty.ngrok-free.app/{urlEndpoint}</kbd>
     )
-  }
+  };
 
   return (
     <div>
