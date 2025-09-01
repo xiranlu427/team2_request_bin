@@ -40,11 +40,11 @@ const Basket = ({ requests }) => {
                 Requests collected at <kbd>{uri}</kbd><br />
                 Total requests: {requests.length}
               </p>
-              <ul>
+              <div>
                 {requests.map((request) => {
                   return <Request key={JSON.stringify(request)} request={request} />
                 })}
-              </ul>
+              </div>
             </>
           : <>
               <h2>Empty basket!</h2>
