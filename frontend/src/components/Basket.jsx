@@ -31,7 +31,7 @@ const Basket = ({ requests }) => {
     <div>
       <h1>Basket: {urlEndpoint}</h1>
       <div>
-        <button onClick={deleteBasket}>Delete basket</button>
+        <button type="button" onClick={deleteBasket}>Delete basket</button>
       </div>
       <div>
         { requests.length > 0
