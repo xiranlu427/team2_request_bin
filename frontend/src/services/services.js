@@ -9,3 +9,9 @@ export const createNewBasket = async (newBasketName) => {
   const response = await axios.post(`/api/baskets/${newBasketName}`);
   return response.data;
 };
+
+const deleteBasket = (urlEndpoint) => {
+  return axios.delete(`/api/baskets/${urlEndpoint}`);
+};
+
+export default { getRandomNewBasketName, createNewBasket, deleteBasket };
