@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const deleteBasket = async function (urlEndpoint) {
-  const response = await axios.delete(`/api/baskets/${urlEndpoint}`);
-  return response.status;
+const deleteBasket = (urlEndpoint) => {
+  return axios.delete(`/api/baskets/${urlEndpoint}`);
 };
 
 export default { deleteBasket };

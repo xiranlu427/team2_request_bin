@@ -9,12 +9,19 @@ const Basket = ({ requests }) => {
   const deleteBasket = () => {
     // Pending -> Better error handling, can use `useState` to setErrorMessage on `/`
     services.deleteBasket(urlEndpoint)
-      .catch(() => {
-        console.log('The basket does not exist!')
+      .then(() => {
+        console.log('Basket deleted successfully!');
+      })
+      .catch((error) => {
+        if (error.response?.status === 404) {
+          console.log('The basket does not exist!');
+        } else {
+          console.error(`Unexpected error: ${error.message}`);
+        }
       })
       .finally(() => {
         navigate('/');
-      })
+      });
   };
 
   // Can use `window.location.origin` here instead of hardcoding the domain
