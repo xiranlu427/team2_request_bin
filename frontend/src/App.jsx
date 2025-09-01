@@ -52,7 +52,7 @@ function App() {
             </main>
           }
         />
-        <Route path='/:end_url' element={<Basket />} />
+        <Route path='/:url_endpoint' element={<Basket />} />
       </Routes>
     </div>
   );
