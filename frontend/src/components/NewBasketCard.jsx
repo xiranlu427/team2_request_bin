@@ -91,14 +91,14 @@ function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNe
           status: 'conflict', 
           message: `Failed to create basket: ${basketName} - basket already exists.`
         });
-      } else if (status === 400) {
+      } else if (status === 400 || status === 414) {
         // await refreshCard();
         setCreationResult({ 
           status: 'invalid', 
           message: `Invalid basket name: only alphanumeric characters allowed and at most 100 characters.`
         });
       } else {
-        setCreationResult({ 
+        setCreationResult({
           status: 'error', 
           message: `Failed to create basket: ${err}.`
         });
