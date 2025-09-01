@@ -10,6 +10,7 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
+const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
@@ -26,7 +27,7 @@ server.all("/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
 
   //Add the body to Mongo and get a document ID
-  let documentId = body ? Math.random() * 1000 : undefined;
+  let documentId = await mongoInsert(body);
 
   // Try adding the request to the SQL database if it fails, send 404 error
   try {
@@ -98,6 +99,11 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
     let requests = await pgApi.getRequests(endpoint);
     if (!requests) throw new Error("Requests couldn't be fetched.");
 
+    requests.forEach(async (reqObj) => {
+      let mongoDocId = reqObj.body;
+      reqObj.body = await mongoGetRequest(mongoDocId);
+    });
+
     res.json(requests);
   } catch (e) {
     console.error(e);
@@ -117,7 +123,9 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
   try {
     let isDuplicateBasket = await pgApi.isDuplicateBasket(endpoint);
     if (isDuplicateBasket) {
-      res.status(403).send(`Failed to create a basket. ${endpoint} already exists.`);
+      res
+        .status(403)
+        .send(`Failed to create a basket. ${endpoint} already exists.`);
     }
 
     let newBasket = await pgApi.createBasket(endpoint);
