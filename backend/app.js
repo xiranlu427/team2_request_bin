@@ -10,7 +10,8 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
-const { mongoConnect, mongoDisconnect, mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
+const MongoDB = require("./lib/mongo_api");
+const mongoApi = new MongoDB();
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
@@ -27,7 +28,7 @@ server.all("/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
 
   //Add the body to Mongo and get a document ID
-  let documentId = await mongoInsert(body);
+  let documentId = await mongoApi.insert(body);
 
   // Try adding the request to the SQL database if it fails, send 404 error
   try {
@@ -102,7 +103,7 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
     requests = await Promise.all(
       requests.map(async (reqObj) => {
         let mongoDocId = reqObj.body;
-        reqObj.body = await mongoGetRequest(mongoDocId);
+        reqObj.body = await mongoApi.get(mongoDocId);
         return reqObj;
       })
     );

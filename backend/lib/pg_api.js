@@ -1,5 +1,6 @@
 const pgQuery = require("./pg_connection");
 
+
 module.exports = class PostgreSQL {
   //Returns the id of a basket based on an endpoint
   async getBasketId(urlEndpoint) {
