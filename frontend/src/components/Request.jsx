@@ -1,4 +1,4 @@
-// The properties will change based on request format, in case the request is an array, then values will be referenced by index
+// The `body` property is yet to be added, will be after MongoDB is added
 const Request = ({ request }) => {
   const date = new Date(request.arrival_timestamp);
   const dateString = date.toDateString();
@@ -18,7 +18,7 @@ const Request = ({ request }) => {
         </tr>
         <tr>
           <th>Body</th>
-          <td>{request.body}</td>
+          <td></td>
         </tr>
       </tabele>
     </div>
