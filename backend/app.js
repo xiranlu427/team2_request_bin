@@ -10,7 +10,7 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
-const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
+const { mongoConnect, mongoDisconnect, mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
@@ -99,10 +99,13 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
     let requests = await pgApi.getRequests(endpoint);
     if (!requests) throw new Error("Requests couldn't be fetched.");
 
-    requests.forEach(async (reqObj) => {
-      let mongoDocId = reqObj.body;
-      reqObj.body = await mongoGetRequest(mongoDocId);
-    });
+    requests = await Promise.all(
+      requests.map(async (reqObj) => {
+        let mongoDocId = reqObj.body;
+        reqObj.body = await mongoGetRequest(mongoDocId);
+        return reqObj;
+      })
+    );
 
     res.json(requests);
   } catch (e) {
@@ -162,6 +165,15 @@ server.use((error, req, res, _next) => {
   res.status(404).render("error", { error: error });
 });
 
-server.listen(PORT, () => {
+async function startApp() {
+  await mongoConnect();
+  
+  server.listen(PORT, () => {
   console.log(`Your server is now live on ${HOST}:${PORT}`);
 });
+}
+
+startApp();
+
+// process.on('SIGTERM', mongoDisconnect);
+// process.on('SIGINT', mongoDisconnect);

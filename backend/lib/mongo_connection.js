@@ -1,41 +1,43 @@
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 
 // Connection URL
 const url = "mongodb://localhost:27017"; //PORT
 const client = new MongoClient(url);
-
-// Database Name
-const dbName = "request_bin";
+let db;
+let collection;
 
 module.exports = {
+  mongoConnect: async function() {
+    await client.connect();
+
+    db = client.db("request_bin");
+    collection = await db.collection("request_bodies");
+
+    console.log("Connected to MongoDB");
+  },
+
+  mongoDisconnect: async function() {
+    await client.close();
+    console.log("Disconnected from MongoDB");
+  },
+
   mongoInsert: async function (body) {
-    // Use connect method to connect to the server
     try {
-      await client.connect();
-      console.log("Connected successfully to server");
-      const db = client.db(dbName);
-      const collection = db.collection("request_bodies");
-
       let result = await collection.insertOne({ body: body });
-      await client.close();
 
-      return result;
+      return result.insertedId;
     } catch (e) {
       console.error(e);
     }
   },
 
-  mongoGetRequest: async function () {
+  mongoGetRequest: async function (documentId) {
     try {
-      await client.connect();
-      console.log("Connected successfully to server");
-      const db = client.db(dbName);
-      const collection = db.collection("request_bodies");
+      let result = await collection.findOne({
+        _id: new ObjectId(`${documentId}`)
+      });
 
-      let result = await collection.callback(...args);
-      await client.close();
-
-      return result;
+      return result.body;
     } catch (e) {
       console.error(e);
     }

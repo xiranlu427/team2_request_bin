@@ -123,7 +123,7 @@ module.exports = class PostgreSQL {
       let basketId = await this.getBasketId(urlEndpoint);
 
       let result = await pgQuery(
-        "SELECT (arrival_timestamp, headers, method, body) FROM requests WHERE basket_id = $1",
+        "SELECT id, arrival_timestamp as timestamp, headers, method, body FROM requests WHERE basket_id = $1",
         basketId
       );
 
