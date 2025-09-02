@@ -165,15 +165,19 @@ server.use((error, req, res, _next) => {
   res.status(404).render("error", { error: error });
 });
 
-async function startApp() {
-  await mongoConnect();
-  
-  server.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Your server is now live on ${HOST}:${PORT}`);
 });
-}
 
-startApp();
+// async function startApp() {
+//   await mongoConnect();
+  
+//   server.listen(PORT, () => {
+//   console.log(`Your server is now live on ${HOST}:${PORT}`);
+// });
+// }
+
+// startApp();
 
 // process.on('SIGTERM', mongoDisconnect);
 // process.on('SIGINT', mongoDisconnect);
