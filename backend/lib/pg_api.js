@@ -1,6 +1,5 @@
 const pgQuery = require("./pg_connection");
 
-
 module.exports = class PostgreSQL {
   //Returns the id of a basket based on an endpoint
   async getBasketId(urlEndpoint) {
@@ -18,7 +17,7 @@ module.exports = class PostgreSQL {
 
   // Checks if a basket exists
   async isDuplicateBasket(urlEndpoint) {
-    return await this.getBasketId(urlEndpoint) !== false;
+    return (await this.getBasketId(urlEndpoint)) !== false;
   }
 
   // Return a potential url endpoint
@@ -27,8 +26,7 @@ module.exports = class PostgreSQL {
       let urlEndpoint;
       do {
         urlEndpoint = generateURLEndpoint();
-      }
-      while (await this.isDuplicateBasket(urlEndpoint));
+      } while (await this.isDuplicateBasket(urlEndpoint));
 
       return urlEndpoint;
     } catch (e) {
@@ -37,9 +35,9 @@ module.exports = class PostgreSQL {
     }
 
     function generateURLEndpoint() {
-      const CHARS = '0123456789abcdefghijklmnopqrstuvwxyz';
+      const CHARS = "0123456789abcdefghijklmnopqrstuvwxyz";
       const URL_LENGTH = 7;
-      let url = '';
+      let url = "";
       for (let idx = 0; idx < URL_LENGTH; idx += 1) {
         let randomChar = CHARS[Math.floor(Math.random() * CHARS.length)];
         url += randomChar;
@@ -105,8 +103,8 @@ module.exports = class PostgreSQL {
       let requestAdded = await pgQuery(
         "INSERT INTO requests (basket_id, headers, method, body) VALUES ($1, $2, $3, $4)",
         basketId,
-        method,
         headers,
+        method,
         mongoDocumentId
       );
 
