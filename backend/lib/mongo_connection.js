@@ -1,9 +1,7 @@
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const config = require("./config");
 
 const client = new MongoClient(config.MONGO_URI);
-
-let db;
 
 module.exports = {
   mongoInsert: async function (body) {
@@ -11,12 +9,12 @@ module.exports = {
     try {
       await client.connect();
       console.log("Connected successfully to server");
-      const db = client.db(dbName);
+      const db = client.db(config.MONGO_DB_NAME);
       const collection = db.collection("request_bodies");
       let result = await collection.insertOne({ body: body });
       await client.close();
 
-      return result;
+      return result.insertedId;
     } catch (e) {
       console.error(e);
     }
@@ -26,13 +24,14 @@ module.exports = {
     try {
       await client.connect();
       console.log("Connected successfully to server");
-      const db = client.db(dbName);
+      const db = client.db(config.MONGO_DB_NAME);
       const collection = db.collection("request_bodies");
 
-      let result = await collection.findOne({ objectId: docId });
+      let result = await collection.findOne({ _id: new ObjectId(docId) });
       await client.close();
 
-      return result;
+      // console.log(result);
+      return result.body;
     } catch (e) {
       console.error(e);
     }
