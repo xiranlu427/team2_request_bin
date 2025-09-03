@@ -10,6 +10,7 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
+const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
@@ -118,7 +119,7 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
       errorMessage = "Endpoint does not exist."
       throw new Error(errorMessage);
     }
-
+    
     let requests = await pgApi.getRequests(endpoint);
     if (!requests) {
       errorMessage = "Requests couldn't be fetched.";
