@@ -10,6 +10,7 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
+const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
@@ -26,7 +27,7 @@ server.all("/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
 
   //Add the body to Mongo and get a document ID
-  let documentId = body ? Math.random() * 1000 : undefined;
+  let documentId = await mongoInsert(body);
 
   // Try adding the request to the SQL database if it fails, send 404 error
   try {
@@ -98,7 +99,18 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
     let requests = await pgApi.getRequests(endpoint);
     if (!requests) throw new Error("Requests couldn't be fetched.");
 
-    res.json(requests);
+    for (let i = 0; i < requests.length; i++) {
+      if (requests[i].id) {
+        let mongoDocId = requests[i].body;
+        requests[i].body = await mongoGetRequest(
+          mongoDocId.replaceAll('"', "")
+        );
+      }
+    }
+
+    res
+      .setHeader("Content-Type", "application/json")
+      .send(JSON.stringify(requests));
   } catch (e) {
     console.error(e);
     res.status(404).send();
@@ -117,7 +129,9 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
   try {
     let isDuplicateBasket = await pgApi.isDuplicateBasket(endpoint);
     if (isDuplicateBasket) {
-      res.status(403).send(`Failed to create a basket. ${endpoint} already exists.`);
+      res
+        .status(403)
+        .send(`Failed to create a basket. ${endpoint} already exists.`);
     }
 
     let newBasket = await pgApi.createBasket(endpoint);
@@ -157,3 +171,16 @@ server.use((error, req, res, _next) => {
 server.listen(PORT, () => {
   console.log(`Your server is now live on ${HOST}:${PORT}`);
 });
+
+// async function startApp() {
+//   await mongoConnect();
+
+//   server.listen(PORT, () => {
+//   console.log(`Your server is now live on ${HOST}:${PORT}`);
+// });
+// }
+
+// startApp();
+
+// process.on('SIGTERM', mongoDisconnect);
+// process.on('SIGINT', mongoDisconnect);
