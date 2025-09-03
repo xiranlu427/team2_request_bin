@@ -1,7 +1,7 @@
 //Import environment variables
-const env = require("./lib/config");
-const HOST = env.HOST;
-const PORT = env.PORT;
+const config = require("./lib/config");
+const HOST = config.HOST;
+const PORT = config.PORT;
 
 //Create an express server
 const express = require("express");
@@ -15,6 +15,9 @@ const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
 server.use(morgan("dev"));
+
+// Create validator
+const { isValidEndpointLength, endpointContainsSymbols } = require("./lib/validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
@@ -52,7 +55,7 @@ server.all("/:endpoint", async (req, res) => {
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
+  if (!req.headers.host.includes(HOST)) {
     res.status(403).send("API access denied");
   }
 
@@ -72,7 +75,7 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
+  if (!req.headers.host.includes(HOST)) {
     res.status(403).send("API access denied");
   }
 
@@ -92,7 +95,7 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to get all of the requests in a basket
 server.get("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
+  if (!req.headers.host.includes(HOST)) {
     res.status(403).send("API access denied");
   }
 
@@ -123,7 +126,7 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to create a new basket
 server.post("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
+  if (!req.headers.host.includes(HOST)) {
     res.status(403).send("API access denied");
   }
 
@@ -132,10 +135,20 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
   try {
     let isDuplicateBasket = await pgApi.isDuplicateBasket(endpoint);
     if (isDuplicateBasket) {
-      res
-        .status(403)
-        .send(`Failed to create a basket. ${endpoint} already exists.`);
+      // 403 CONFLICT
+      res.status(403).send(`Failed to create a basket. ${endpoint} already exists.`);
     }
+
+    if (!isValidEndpointLength(endpoint)) {
+      // 414 URI TOO LONG
+      res.status(414).send("Could not create basket: endpoint length cannot exceed 100 characters");
+    }
+
+    if (endpointContainsSymbols(endpoint)) {
+      // 400 BAD REQUEST
+      res.status(400).send("Could not create basket: endpoint can only contain alphanumeric characters");
+    }
+    
 
     let newBasket = await pgApi.createBasket(endpoint);
     if (!newBasket) throw new Error("Couldn't create basket.");
@@ -150,7 +163,7 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to create a new url endpoint
 server.get("/api/new_url_endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
+  if (!req.headers.host.includes(HOST)) {
     res.status(403).send("API access denied");
   }
 
@@ -174,16 +187,3 @@ server.use((error, req, res, _next) => {
 server.listen(PORT, () => {
   console.log(`Your server is now live on ${HOST}:${PORT}`);
 });
-
-// async function startApp() {
-//   await mongoConnect();
-
-//   server.listen(PORT, () => {
-//   console.log(`Your server is now live on ${HOST}:${PORT}`);
-// });
-// }
-
-// startApp();
-
-// process.on('SIGTERM', mongoDisconnect);
-// process.on('SIGINT', mongoDisconnect);
