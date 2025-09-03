@@ -8,6 +8,7 @@ function NewBasketCard ({ defaultBasketName, setBaskets }) {
   const domainName = `${window.location.origin}/`;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [creationResult, setCreationResult] = useState(null);
+  const [fieldError, setFieldError] = useState("");
   const navigate = useNavigate();
   const inputRef = useRef(null);
 
@@ -16,6 +17,14 @@ function NewBasketCard ({ defaultBasketName, setBaskets }) {
   const closeModal = (e) => {
     e?.preventDefault();
     setIsModalOpen(false);
+  };
+
+  const validateName = (name) => {
+    if (!name) return 'Please provide a basket name.';
+    if (!/^[A-Za-z0-9]{1,100}$/.test(name)) {
+      return 'Invalid name. Only letters and digits, max 100 characters.';
+    }
+    return '';
   };
 
   const ModalContent = () => {
@@ -66,11 +75,13 @@ function NewBasketCard ({ defaultBasketName, setBaskets }) {
     e.preventDefault();
 
     const basketName = inputRef.current?.value.trim();
-    if (!basketName) {
-      setCreationResult({ status: 'empty', message: 'Please provide a basket name.'});
-      openModal();
+    const error = validateName(basketName);
+    if (error) {
+      setFieldError(error);
+      inputRef.current?.focus();
       return;
-    };
+    }
+    setFieldError('');
 
     try {
       await createNewBasket(basketName);
@@ -93,7 +104,7 @@ function NewBasketCard ({ defaultBasketName, setBaskets }) {
         await refreshCard();
         setCreationResult({ 
           status: 'invalid', 
-          message: `Invalid basket name: only alphanumeric characters allowed and at most 100 characters.`
+          message: `Failed to create basket: name is invalid.`
         });
       } else {
         setCreationResult({
@@ -109,7 +120,7 @@ function NewBasketCard ({ defaultBasketName, setBaskets }) {
     <div className="new-basket-card">
       <h1>New Basket</h1>
       <p>Create a basket to collect and inspect HTTP requests</p>
-      <form className="new-basket-form" onSubmit={handleFormSubmit}>
+      <form className="new-basket-form" onSubmit={handleFormSubmit} noValidate>
         <label htmlFor="basket-name-input">{domainName}</label>
         <input
           type="text"
@@ -117,8 +128,15 @@ function NewBasketCard ({ defaultBasketName, setBaskets }) {
           defaultValue={defaultBasketName} 
           ref={inputRef}
           maxLength={100}
+          placeholder="type a name"
+          onInput={() => fieldError && setFieldError("")}
         />
         <button type="submit" className="create-btn">Create</button>
+        {fieldError && (
+          <p id="basket-name-error" className="field-error" role="alert">
+            {fieldError}
+          </p>
+        )}
       </form>
 
       <Modal isOpen={isModalOpen} onClose={closeModal}>

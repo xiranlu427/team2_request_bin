@@ -8,8 +8,30 @@ import Basket from './components/Basket';
 import { getRandomNewBasketName } from './services/services';
 import './App.css';
 
+const STORAGE_KEY = 'rb:baskets';
+
+function loadBasketNames() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(arr)) return [];
+
+    return arr.filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function saveBasketNames(names) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(names));
+  } catch {
+    return;
+  }
+}
+
 function App() {
-  const [baskets, setBaskets] = useState([]);
+  const [baskets, setBaskets] = useState(() => loadBasketNames());
   const [newBasketName, setNewBasketName] = useState(null);
   const location = useLocation();
 
