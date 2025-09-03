@@ -5,8 +5,8 @@
 1. Install packages using `npm install`
 2. Create an .env file with the keys:
 
-- HOST="localhost"
-- PORT="3000"
+- HOST
+- PORT
 - PGUSER
 - PGPASSWORD
 - PGDATABASE="request_bin"
