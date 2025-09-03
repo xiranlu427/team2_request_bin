@@ -206,6 +206,11 @@ server.use((error, req, res, _next) => {
   res.status(404).render("error", { error: error });
 });
 
+// Handler requests for all other/unknown endpoints
+server.use((req, res) => {
+  res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+});
+
 server.listen(PORT, () => {
   console.log(`Your server is now live on ${HOST}:${PORT}`);
 });
