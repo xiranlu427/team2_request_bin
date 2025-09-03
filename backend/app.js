@@ -130,7 +130,7 @@ server.get("/api/new_url_endpoint", async (req, res) => {
   }
 });
 
-// use /i/endpoint instead of /endpoint to distinguish a request endpoint from a basekt view
+//Handles any type of request to the exposed endpoint, sends request data to request table
 server.all("/:endpoint", async (req, res) => {
   let method = req.method;
   let headers = JSON.stringify(req.headers);
