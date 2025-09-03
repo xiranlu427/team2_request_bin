@@ -17,7 +17,7 @@ const morgan = require("morgan");
 server.use(morgan("dev"));
 
 // Create validator
-const { isValidEndpointLength, endpointContainsSymbols } = require("./lib/validator");
+const { endpointIsTooLong, endpointContainsSymbols, endpointOverlapsWeb } = require("./lib/validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
@@ -133,22 +133,25 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
 
   try {
-    let isDuplicateBasket = await pgApi.isDuplicateBasket(endpoint);
-    if (isDuplicateBasket) {
+    if (await pgApi.isDuplicateBasket(endpoint)) {
       // 403 CONFLICT
-      res.status(403).send(`Failed to create a basket. ${endpoint} already exists.`);
+      res.status(403).send("Could not create basket: endpoint already exists.");
     }
 
-    if (!isValidEndpointLength(endpoint)) {
+    if (endpointIsTooLong(endpoint)) {
       // 414 URI TOO LONG
-      res.status(414).send("Could not create basket: endpoint length cannot exceed 100 characters");
+      res.status(414).send("Could not create basket: endpoint length cannot exceed 100 characters.");
     }
 
     if (endpointContainsSymbols(endpoint)) {
       // 400 BAD REQUEST
-      res.status(400).send("Could not create basket: endpoint can only contain alphanumeric characters");
+      res.status(400).send("Could not create basket: endpoint can only contain alphanumeric characters.");
     }
     
+    if (endpointOverlapsWeb(endpoint)) {
+      // 403 CONFLICT
+      res.status(403).send("Could not create basket: endpoint conflicts with reserved system path.");
+    }
 
     let newBasket = await pgApi.createBasket(endpoint);
     if (!newBasket) throw new Error("Couldn't create basket.");
