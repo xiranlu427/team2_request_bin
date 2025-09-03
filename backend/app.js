@@ -131,7 +131,7 @@ server.get("/api/new_url_endpoint", async (req, res) => {
 });
 
 // use /i/endpoint instead of /endpoint to distinguish a request endpoint from a basekt view
-server.all("/i/:endpoint", async (req, res) => {
+server.all("/:endpoint", async (req, res) => {
   let method = req.method;
   let headers = JSON.stringify(req.headers);
   let body = req.body; //Stored in Mongo
