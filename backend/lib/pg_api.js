@@ -66,10 +66,7 @@ module.exports = class PostgreSQL {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
 
-      let result = await pgQuery(
-        "DELETE FROM baskets WHERE basket_id = $1",
-        basketId
-      );
+      let result = await pgQuery("DELETE FROM baskets WHERE id = $1", basketId);
 
       return result.rowCount > 0;
     } catch (e) {
@@ -101,7 +98,7 @@ module.exports = class PostgreSQL {
       let basketId = await this.getBasketId(urlEndpoint);
 
       let requestAdded = await pgQuery(
-        "INSERT INTO requests (basket_id, headers, method, body) VALUES ($1, $2, $3, $4)",
+        "INSERT INTO requests (basket_id, method, headers, body) VALUES ($1, $2, $3, $4)",
         basketId,
         headers,
         method,
@@ -123,6 +120,7 @@ module.exports = class PostgreSQL {
 
       let result = await pgQuery(
         "SELECT id, arrival_timestamp as timestamp, headers, method, body FROM requests WHERE basket_id = $1",
+        "SELECT arrival_timestamp, method, headers, body FROM requests WHERE basket_id = $1",
         basketId
       );
 

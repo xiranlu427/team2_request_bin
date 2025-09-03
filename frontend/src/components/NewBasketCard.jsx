@@ -4,18 +4,42 @@ import Modal from "./Modal";
 import { getRandomNewBasketName, createNewBasket } from "../services/services";
 
 // the "create a new basket" container on homepage
-function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNewBasket }) {
+function NewBasketCard ({ setBaskets }) {
   const domainName = `${window.location.origin}/`;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [creationResult, setCreationResult] = useState(null);
+  const [fieldError, setFieldError] = useState('');
+  const [newBasketName, setNewBasketName] = useState('');
   const navigate = useNavigate();
   const inputRef = useRef(null);
 
-  const openModal = () => setIsModalOpen(true);
+  useEffect(() => {
+    // add a flag to avoid race conditions with async operations
+    let ignore = false;
+    (async () => {
+      try {
+        const name = await getRandomNewBasketName();
+        if (!ignore) setNewBasketName(name ?? '');
+      } catch (err) {
+        console.error(err);
+      }
+    })();
 
+    return () => { ignore = true };
+  }, []);
+
+  const openModal = () => setIsModalOpen(true);
   const closeModal = (e) => {
     e?.preventDefault();
     setIsModalOpen(false);
+  };
+
+  const validateName = (name) => {
+    if (!name) return 'Please provide a basket name.';
+    if (!/^[A-Za-z0-9]{1,100}$/.test(name)) {
+      return 'Invalid name. Only letters and digits, max 100 characters.';
+    }
+    return '';
   };
 
   const ModalContent = () => {
@@ -57,45 +81,49 @@ function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNe
     }
   };
 
-  // const refreshCard = async () => {
-  //   const newBasketName = await getRandomNewBasketName();
-  //   if (inputRef.current) inputRef.current.value = newBasketName;
-  // };
+  const refreshCard = async () => {
+    try {
+      const name = await getRandomNewBasketName();
+      setNewBasketName(name ?? '');
+    } catch (err) {
+      console.error('Failed to refresh name', err);
+    };
+  };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    const basketName = inputRef.current?.value.trim();
-    if (!basketName) {
-      setCreationResult({ status: 'empty', message: 'Please provide a basket name.'});
-      openModal();
+    const basketName = newBasketName.trim();
+    const error = validateName(basketName);
+    if (error) {
+      setFieldError(error);
+      inputRef.current?.focus();
       return;
-    };
+    }
+    setFieldError('');
 
     try {
-      // await createNewBasket(basketName);
-      // this line is for testing - when connected to backend, delete this and use the line above
-      await createBasket(basketName); 
+      await createNewBasket(basketName);
       setBaskets(prev => prev.includes(basketName) ? prev : [basketName, ...prev]);
       setCreationResult({ 
         status: 'success', 
         message: `Basket ${basketName} is successfully created!`,
         name: basketName,
       });
-      // await refreshCard();
+      await refreshCard();
     } catch (err) {
       const status = err.response?.status;
       if (status === 403) {
-        // await refreshCard();
+        await refreshCard();
         setCreationResult({ 
           status: 'conflict', 
           message: `Failed to create basket: ${basketName} - basket already exists.`
         });
       } else if (status === 400 || status === 414) {
-        // await refreshCard();
+        await refreshCard();
         setCreationResult({ 
           status: 'invalid', 
-          message: `Invalid basket name: only alphanumeric characters allowed and at most 100 characters.`
+          message: `Failed to create basket: name is invalid.`
         });
       } else {
         setCreationResult({
@@ -111,16 +139,26 @@ function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNe
     <div className="new-basket-card">
       <h1>New Basket</h1>
       <p>Create a basket to collect and inspect HTTP requests</p>
-      <form className="new-basket-form" onSubmit={handleFormSubmit}>
+      <form className="new-basket-form" onSubmit={handleFormSubmit} noValidate>
         <label htmlFor="basket-name-input">{domainName}</label>
         <input
           type="text"
           id="basket-name-input"
-          defaultValue={defaultBasketName} 
+          value={newBasketName} 
           ref={inputRef}
           maxLength={100}
+          placeholder="type a name"
+          onChange={(e) => {
+            if (fieldError) setFieldError('');
+            setNewBasketName(e.target.value);
+          }}
         />
         <button type="submit" className="create-btn">Create</button>
+        {fieldError && (
+          <p id="basket-name-error" className="field-error" role="alert">
+            {fieldError}
+          </p>
+        )}
       </form>
 
       <Modal isOpen={isModalOpen} onClose={closeModal}>
@@ -128,6 +166,6 @@ function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNe
       </Modal>
     </div>
   );
-};
+}
 
 export default NewBasketCard;

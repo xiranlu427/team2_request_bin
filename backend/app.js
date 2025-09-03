@@ -19,6 +19,9 @@ server.use(morgan("dev"));
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
 
+// Add static middlewear to return files with static content
+server.use(express.static('dist'))
+
 //Handles any type of request to the exposed endpoint, sends request data to request table
 server.all("/:endpoint", async (req, res) => {
   let method = req.method;
