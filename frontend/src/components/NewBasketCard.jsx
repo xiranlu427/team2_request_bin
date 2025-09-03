@@ -4,7 +4,7 @@ import Modal from "./Modal";
 import { getRandomNewBasketName, createNewBasket } from "../services/services";
 
 // the "create a new basket" container on homepage
-function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNewBasket }) {
+function NewBasketCard ({ defaultBasketName, setBaskets }) {
   const domainName = `${window.location.origin}/`;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [creationResult, setCreationResult] = useState(null);
@@ -66,10 +66,10 @@ function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNe
     }
   };
 
-  // const refreshCard = async () => {
-  //   const newBasketName = await getRandomNewBasketName();
-  //   if (inputRef.current) inputRef.current.value = newBasketName;
-  // };
+  const refreshCard = async () => {
+    const newBasketName = await getRandomNewBasketName();
+    if (inputRef.current) inputRef.current.value = newBasketName;
+  };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -84,26 +84,24 @@ function NewBasketCard ({ defaultBasketName, setBaskets, createBasket = createNe
     setFieldError('');
 
     try {
-      // await createNewBasket(basketName);
-      // this line is for testing - when connected to backend, delete this and use the line above
-      await createBasket(basketName); 
+      await createNewBasket(basketName);
       setBaskets(prev => prev.includes(basketName) ? prev : [basketName, ...prev]);
       setCreationResult({ 
         status: 'success', 
         message: `Basket ${basketName} is successfully created!`,
         name: basketName,
       });
-      // await refreshCard();
+      await refreshCard();
     } catch (err) {
       const status = err.response?.status;
       if (status === 403) {
-        // await refreshCard();
+        await refreshCard();
         setCreationResult({ 
           status: 'conflict', 
           message: `Failed to create basket: ${basketName} - basket already exists.`
         });
       } else if (status === 400 || status === 414) {
-        // await refreshCard();
+        await refreshCard();
         setCreationResult({ 
           status: 'invalid', 
           message: `Failed to create basket: name is invalid.`

@@ -1,15 +1,24 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import services from '../services/services';
 import Request from './Request';
 
-const Basket = ({ requests }) => {
-  const urlEndpoint = useParams().url_endpoint;
+const Basket = ({ setBaskets }) => {
+  const urlEndpoint = useParams().urlEndpoint;
   const navigate = useNavigate();
+  const [requests, setRequests] = useState([]);
+
+  useEffect(() => {
+    services.getRequests(urlEndpoint)
+      .then(setRequests)
+      .catch(() => setRequests([]));
+  }, [urlEndpoint]);
 
   const deleteBasket = () => {
     // Pending -> Better error handling, can use `useState` to setErrorMessage on `/`
     services.deleteBasket(urlEndpoint)
       .then(() => {
+        setBaskets(baskets => baskets.filter((basket) => basket !== urlEndpoint));
         console.log('Basket deleted successfully!');
       })
       .catch((error) => {
@@ -24,8 +33,7 @@ const Basket = ({ requests }) => {
       });
   };
 
-  // Can use `window.location.origin` here instead of hardcoding the domain
-  const uri = `regular-seahorse-mighty.ngrok-free.app/${urlEndpoint}`
+  const uri = `${window.location.origin}/${urlEndpoint}`
 
   return (
     <div>
