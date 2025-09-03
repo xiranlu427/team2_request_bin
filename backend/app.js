@@ -10,7 +10,11 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
-const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
+const {
+  mongoInsertBody,
+  mongoGetBody,
+  mongoDeleteBody,
+} = require("./lib/mongo_connection");
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
@@ -20,7 +24,7 @@ server.use(morgan("dev"));
 server.use(express.text({ type: "*/*" }));
 
 // Add static middlewear to return files with static content
-server.use(express.static('dist'))
+server.use(express.static("dist"));
 
 //Handles any type of request to the exposed endpoint, sends request data to request table
 server.all("/:endpoint", async (req, res) => {
@@ -30,7 +34,7 @@ server.all("/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
 
   //Add the body to Mongo and get a document ID
-  let documentId = await mongoInsert(body);
+  let documentId = await mongoInsertBody(body);
 
   // Try adding the request to the SQL database if it fails, send 404 error
   try {
@@ -52,13 +56,23 @@ server.all("/:endpoint", async (req, res) => {
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
 
   let endpoint = req.params.endpoint;
 
   try {
+    //Get the requests from PG, then clear the bodies from mongo
+    let requests = await pgApi.getRequests(endpoint);
+    for (let i = 0; i < requests.length; i++) {
+      if (requests[i].body) {
+        let deleted = await mongoDeleteBody(requests[i].body);
+
+        if (!deleted) throw new Error("Mongo deletion issue");
+      }
+    }
+
     let basketCleared = await pgApi.clearBasket(endpoint);
     if (!basketCleared) throw new Error("Basket couldn't be cleared.");
 
@@ -72,13 +86,24 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
 
   let endpoint = req.params.endpoint;
 
   try {
+    //Clear the basket's request bodies from mongo first
+    //Get the requests from PG, then clear the bodies from mongo
+    let requests = await pgApi.getRequests(endpoint);
+    for (let i = 0; i < requests.length; i++) {
+      if (requests[i].body) {
+        let deleted = await mongoDeleteBody(requests[i].body);
+
+        if (!deleted) throw new Error("Mongo deletion issue");
+      }
+    }
+
     let basketDeleted = await pgApi.deleteBasket(endpoint);
     if (!basketDeleted) throw new Error("Basket couldn't be deleted.");
 
@@ -92,9 +117,9 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to get all of the requests in a basket
 server.get("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
 
   let endpoint = req.params.endpoint;
 
@@ -102,12 +127,11 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
     let requests = await pgApi.getRequests(endpoint);
     if (!requests) throw new Error("Requests couldn't be fetched.");
 
+    // Get each request's body from mongo and replace the body property on it with what mongo returns
     for (let i = 0; i < requests.length; i++) {
       if (requests[i].id) {
         let mongoDocId = requests[i].body;
-        requests[i].body = await mongoGetRequest(
-          mongoDocId.replaceAll('"', "")
-        );
+        requests[i].body = await mongoGetBody(mongoDocId);
       }
     }
 

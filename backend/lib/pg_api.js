@@ -100,8 +100,8 @@ module.exports = class PostgreSQL {
       let requestAdded = await pgQuery(
         "INSERT INTO requests (basket_id, method, headers, body) VALUES ($1, $2, $3, $4)",
         basketId,
-        headers,
         method,
+        headers,
         mongoDocumentId
       );
 
@@ -120,7 +120,6 @@ module.exports = class PostgreSQL {
 
       let result = await pgQuery(
         "SELECT id, arrival_timestamp as timestamp, headers, method, body FROM requests WHERE basket_id = $1",
-        "SELECT arrival_timestamp, method, headers, body FROM requests WHERE basket_id = $1",
         basketId
       );
 
