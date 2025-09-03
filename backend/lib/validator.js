@@ -1,6 +1,6 @@
 module.exports = {
   endpointIsTooLong(urlEndpoint) {
-    return urlEndpoint.length <= 100;
+    return urlEndpoint.length > 100;
   },
 
   endpointContainsSymbols(urlEndpoint) {
