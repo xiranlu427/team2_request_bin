@@ -3,6 +3,8 @@ const env = require("./lib/config");
 const HOST = env.HOST;
 const PORT = env.PORT;
 
+const path = require("path");
+
 //Create an express server
 const express = require("express");
 const server = express();
@@ -20,34 +22,11 @@ server.use(morgan("dev"));
 server.use(express.text({ type: "*/*" }));
 
 // Add static middlewear to return files with static content
-server.use(express.static('dist'))
-
-//Handles any type of request to the exposed endpoint, sends request data to request table
-server.all("/:endpoint", async (req, res) => {
-  let method = req.method;
-  let headers = JSON.stringify(req.headers);
-  let body = req.body; //Stored in Mongo
-  let endpoint = req.params.endpoint;
-
-  //Add the body to Mongo and get a document ID
-  let documentId = await mongoInsert(body);
-
-  // Try adding the request to the SQL database if it fails, send 404 error
-  try {
-    let requestAdded = await pgApi.addRequest(
-      endpoint,
-      method,
-      headers,
-      documentId
-    );
-    if (!requestAdded) throw new Error("Request couldn't be added.");
-
-    res.status(204).send();
-  } catch (e) {
-    console.error(e);
-    res.status(404).send();
-  }
+server.use("/web", express.static('dist')); // changed the base url where static content is served
+server.get(/^\/web(?:\/.*)?$/, (_req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
+server.get("/", (_req, res) => res.redirect("/web"));
 
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
@@ -92,9 +71,9 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to get all of the requests in a basket
 server.get("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
 
   let endpoint = req.params.endpoint;
 
@@ -123,9 +102,9 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to create a new basket
 server.post("/api/baskets/:endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
 
   let endpoint = req.params.endpoint;
 
@@ -150,15 +129,42 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to create a new url endpoint
 server.get("/api/new_url_endpoint", async (req, res) => {
   //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
 
   try {
     let newURLEndpoint = await pgApi.getNewURLEndpoint();
     if (!newURLEndpoint) throw new Error("Couldn't generate new url endpoint.");
 
     res.json(newURLEndpoint);
+  } catch (e) {
+    console.error(e);
+    res.status(404).send();
+  }
+});
+
+//Handles any type of request to the exposed endpoint, sends request data to request table
+server.all("/:endpoint", async (req, res) => {
+  let method = req.method;
+  let headers = JSON.stringify(req.headers);
+  let body = req.body; //Stored in Mongo
+  let endpoint = req.params.endpoint;
+
+  //Add the body to Mongo and get a document ID
+  let documentId = body ? Math.random() * 1000 : undefined;
+
+  // Try adding the request to the SQL database if it fails, send 404 error
+  try {
+    let requestAdded = await pgApi.addRequest(
+      endpoint,
+      method,
+      headers,
+      documentId
+    );
+    if (!requestAdded) throw new Error("Request couldn't be added.");
+
+    res.status(204).send();
   } catch (e) {
     console.error(e);
     res.status(404).send();
