@@ -18,7 +18,7 @@ const Request = ({ request }) => {
         </tr>
         <tr>
           <th>Body</th>
-          <td></td>
+          <td>{request.body}</td>
         </tr>
       </tabele>
     </div>
