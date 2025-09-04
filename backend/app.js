@@ -9,11 +9,11 @@ const path = require("path");
 const express = require("express");
 const server = express();
 
-// Create a HTTP server for WebSockets
+// Create a 'ws' server for WebSockets
 const http = require("http");
 const WebSocket = require("ws"); // 'ws' is a Node.js library for WebSocket client (the backend) and server implementation
-const httpServer = http.createServer(server);
-const webSocketServer = new WebSocket.Server({ server: httpServer });
+const httpServer = http.createServer(server); // This creates an 'http' server
+const webSocketServer = new WebSocket.Server({ server: httpServer }); // This creates a WebSocket server and allows it to run on the same port as the http server
 
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
@@ -225,7 +225,7 @@ server.get("/api/new_url_endpoint", async (req, res) => {
   }
 });
 
-// Connections for WebSocket
+// Handles connection for WebSocket(s) on client(s)
 webSocketServer.on('connection', (ws) => {
   console.log('WebSocket client connected!');
 
