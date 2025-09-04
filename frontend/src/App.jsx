@@ -31,10 +31,6 @@ function App() {
   const [baskets, setBaskets] = useState(() => loadBasketNames());
 
   useEffect(() => {
-    loadBasketNames();
-  },[]);
-
-  useEffect(() => {
     saveBasketNames(baskets);
   },[baskets]);
 
