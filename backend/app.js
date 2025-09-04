@@ -199,8 +199,8 @@ server.all("/:endpoint", async (req, res) => {
   try {
     let requestAdded = await pgApi.addRequest(
       endpoint,
-      method,
       headers,
+      method,
       documentId
     );
     if (!requestAdded) throw new Error("Request couldn't be added.");
@@ -226,8 +226,8 @@ server.all("/:endpoint", async (req, res) => {
   try {
     let requestAdded = await pgApi.addRequest(
       endpoint,
-      method,
       headers,
+      method,
       documentId
     );
     if (!requestAdded) throw new Error("Request couldn't be added.");

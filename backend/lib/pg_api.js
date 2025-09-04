@@ -102,7 +102,7 @@ module.exports = class PostgreSQL {
   }
 
   // Adds a request to the database
-  async addRequest(urlEndpoint, method, headers, mongoDocumentId) {
+  async addRequest(urlEndpoint, headers, method, mongoDocumentId) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
       if (basketId === false) {
@@ -110,10 +110,10 @@ module.exports = class PostgreSQL {
       }
 
       let requestAdded = await pgQuery(
-        "INSERT INTO requests (basket_id, method, headers, body) VALUES ($1, $2, $3, $4)",
+        "INSERT INTO requests (basket_id, headers, method, body) VALUES ($1, $2, $3, $4)",
         basketId,
-        method,
         headers,
+        method,
         mongoDocumentId
       );
 
@@ -134,7 +134,7 @@ module.exports = class PostgreSQL {
       }
 
       let result = await pgQuery(
-        "SELECT id, arrival_timestamp as timestamp, method, headers, body FROM requests WHERE basket_id = $1",
+        "SELECT id, arrival_timestamp as timestamp, headers, method, body FROM requests WHERE basket_id = $1",
         basketId
       );
 
