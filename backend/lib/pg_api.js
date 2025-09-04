@@ -8,7 +8,6 @@ module.exports = class PostgreSQL {
         "SELECT id FROM baskets WHERE url_endpoint = $1",
         urlEndpoint
       );
-      console.log(basketId.rows[0].id);
       return basketId.rows[0].id;
     } catch (e) {
       console.error(`Couldn't get basketId: ${e}`);
@@ -54,9 +53,6 @@ module.exports = class PostgreSQL {
         "INSERT INTO baskets (url_endpoint) VALUES ($1)",
         urlEndpoint
       );
-      if (result === false) {
-        throw new Error("Could not create basket");
-      }
 
       return result.rowCount > 0;
     } catch (e) {
