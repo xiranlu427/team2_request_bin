@@ -185,57 +185,39 @@ server.get("/api/new_url_endpoint", async (req, res) => {
   }
 });
 
-//Handles any type of request to the exposed endpoint, sends request data to request table
+//Handles any type of request to the exposed endpoint, sends request data to request table (webhooks use this endpoint)
 server.all("/:endpoint", async (req, res) => {
-  let method = req.method;
   let headers = JSON.stringify(req.headers);
+  let method = req.method;
   let body = req.body; //Stored in Mongo
   let endpoint = req.params.endpoint;
+  let errorMessage = '';
 
-  //Add the body to Mongo and get a document ID
-  let documentId = body ? Math.random() * 1000 : undefined;
-
-  // Try adding the request to the SQL database if it fails, send 404 error
   try {
+    if (!await pgApi.basketExists(endpoint)) {
+      errorMessage = "Endpoint does not exist."
+      throw new Error(errorMessage);
+    }
+    
+    //Add the body to Mongo and get a document ID
+    let documentId = await mongoInsert(body);
+
+    // Try adding the request to the SQL database if it fails, send 404 error
     let requestAdded = await pgApi.addRequest(
       endpoint,
       headers,
       method,
       documentId
     );
-    if (!requestAdded) throw new Error("Request couldn't be added.");
+    if (!requestAdded) {
+      errorMessage = "Request couldn't be added."
+      throw new Error(errorMessage);
+    }
 
     res.status(204).send();
   } catch (e) {
     console.error(e);
     res.status(404).send(errorMessage);
-  }
-});
-
-//Handles any type of request to the exposed endpoint, sends request data to request table
-server.all("/:endpoint", async (req, res) => {
-  let method = req.method;
-  let headers = JSON.stringify(req.headers);
-  let body = req.body; //Stored in Mongo
-  let endpoint = req.params.endpoint;
-
-  //Add the body to Mongo and get a document ID
-  let documentId = body ? Math.random() * 1000 : undefined;
-
-  // Try adding the request to the SQL database if it fails, send 404 error
-  try {
-    let requestAdded = await pgApi.addRequest(
-      endpoint,
-      headers,
-      method,
-      documentId
-    );
-    if (!requestAdded) throw new Error("Request couldn't be added.");
-
-    res.status(204).send();
-  } catch (e) {
-    console.error(e);
-    res.status(404).send();
   }
 });
 
