@@ -16,8 +16,12 @@ const getRequests = async (urlEndpoint) => {
   return response.data;
 };
 
+const clearBasket = async (urlEndpoint) => {
+  return axios.put(`${baseUrl}/baskets/${urlEndpoint}`);
+}
+
 const deleteBasket = (urlEndpoint) => {
   return axios.delete(`${baseUrl}/baskets/${urlEndpoint}`);
 };
 
-export default { getRandomNewBasketName, createNewBasket, deleteBasket, getRequests };
+export default { getRandomNewBasketName, createNewBasket, deleteBasket, getRequests, clearBasket };

@@ -1,6 +1,6 @@
 // The `body` property is yet to be added, will be added after MongoDB is added
 const Request = ({ request }) => {
-  const date = new Date(request.arrival_timestamp);
+  const date = new Date(request.timestamp);
   const dateString = date.toDateString();
   const timeString = date.toTimeString();
 

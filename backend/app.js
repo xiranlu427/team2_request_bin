@@ -9,6 +9,12 @@ const path = require("path");
 const express = require("express");
 const server = express();
 
+// Create a HTTP server for WebSockets
+const http = require("http");
+const WebSocket = require("ws"); // 'ws' is a Node.js library for WebSocket client (the backend) and server implementation
+const httpServer = http.createServer(server);
+const webSocketServer = new WebSocket.Server({ server: httpServer });
+
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
@@ -219,6 +225,17 @@ server.get("/api/new_url_endpoint", async (req, res) => {
   }
 });
 
+// Connections for WebSocket
+webSocketServer.on('connection', (ws) => {
+  console.log('WebSocket client connected!');
+
+  ws.on('error', console.error);
+
+  ws.on('close', () => {
+    console.log('WebSocket client closed!')
+  });
+});
+
 //Handles any type of request to the exposed endpoint, sends request data to request table (webhooks use this endpoint)
 server.all("/:endpoint", async (req, res) => {
   let headers = JSON.stringify(req.headers);
@@ -248,6 +265,14 @@ server.all("/:endpoint", async (req, res) => {
       throw new Error(errorMessage);
     }
 
+    // Sends a request directly to client using the WebSocket connection
+    let request = { timestamp: new Date(), method, headers, body, endpoint }
+    webSocketServer.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ type: 'new_request', data: request}))
+      }
+    });
+
     res.status(204).send();
   } catch (e) {
     console.error(e);
@@ -266,6 +291,6 @@ server.use((req, res) => {
   res.sendFile(path.resolve(__dirname, "dist", "index.html"));
 });
 
-server.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Your server is now live on ${HOST}:${PORT}`);
 });
