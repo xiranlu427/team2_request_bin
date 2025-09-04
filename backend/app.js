@@ -53,7 +53,7 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
 
   try {
     if (!await pgApi.basketExists(endpoint)) {
-      errorMessage = "Endpoint does not exist."
+      errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
 
@@ -92,7 +92,7 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
 
   try {
     if (!await pgApi.basketExists(endpoint)) {
-      errorMessage = "Endpoint does not exist."
+      errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
 
@@ -132,7 +132,7 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
 
   try {
     if (!await pgApi.basketExists(endpoint)) {
-      errorMessage = "Endpoint does not exist."
+      errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
     
@@ -214,7 +214,7 @@ server.get("/api/new_url_endpoint", async (req, res) => {
   try {
     let newURLEndpoint = await pgApi.getNewURLEndpoint();
     if (!newURLEndpoint) {
-      errorMessage = "Couldn't generate new url endpoint."
+      errorMessage = "Couldn't generate new url endpoint.";
       throw new Error(errorMessage);
     }
 
@@ -246,7 +246,7 @@ server.all("/:endpoint", async (req, res) => {
 
   try {
     if (!await pgApi.basketExists(endpoint)) {
-      errorMessage = "Endpoint does not exist."
+      errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
     
@@ -261,15 +261,15 @@ server.all("/:endpoint", async (req, res) => {
       documentId
     );
     if (!requestAdded) {
-      errorMessage = "Request couldn't be added."
+      errorMessage = "Request couldn't be added.";
       throw new Error(errorMessage);
     }
 
     // Sends a request directly to client using the WebSocket connection
-    let request = { timestamp: new Date(), method, headers, body, endpoint }
+    let request = { timestamp: new Date(), method, headers, body, endpoint };
     webSocketServer.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ type: 'new_request', data: request}))
+        client.send(JSON.stringify({ type: 'new_request', data: request}));
       }
     });
 
