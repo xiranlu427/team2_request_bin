@@ -4,7 +4,7 @@ CREATE DATABASE request_bin;
 
 CREATE TABLE baskets(
   id serial PRIMARY KEY,
-  url_endpoint varchar(100) NOT NULL
+  url_endpoint varchar(100) UNIQUE NOT NULL
 );
 
 CREATE TABLE requests(

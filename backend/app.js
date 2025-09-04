@@ -1,7 +1,7 @@
 //Import environment variables
-const env = require("./lib/config");
-const HOST = env.HOST;
-const PORT = env.PORT;
+const config = require("./lib/config");
+const HOST = config.HOST;
+const PORT = config.PORT;
 
 const path = require("path");
 
@@ -12,10 +12,14 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
+const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
 server.use(morgan("dev"));
+
+// Create validator
+const { endpointIsTooLong, endpointContainsSymbols, endpointOverlapsWeb } = require("./lib/validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
@@ -29,41 +33,49 @@ server.get("/", (_req, res) => res.redirect("/web"));
 
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
-
   let endpoint = req.params.endpoint;
+  let errorMessage = '';
 
   try {
+    if (!await pgApi.basketExists(endpoint)) {
+      errorMessage = "Endpoint does not exist."
+      throw new Error(errorMessage);
+    }
+
     let basketCleared = await pgApi.clearBasket(endpoint);
-    if (!basketCleared) throw new Error("Basket couldn't be cleared.");
+    if (!basketCleared) {
+      let errorMessage = "Basket couldn't be cleared.";
+      throw new Error(errorMessage);
+    }
 
     res.status(204).send();
   } catch (e) {
     console.error(e);
-    res.status(404).send();
+    res.status(404).send(errorMessage);
   }
 });
 
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  if (!req.headers.host.includes("localhost")) {
-    res.status(403).send("API access denied");
-  }
-
   let endpoint = req.params.endpoint;
+  let errorMessage = '';
 
   try {
+    if (!await pgApi.basketExists(endpoint)) {
+      errorMessage = "Endpoint does not exist."
+      throw new Error(errorMessage);
+    }
+
     let basketDeleted = await pgApi.deleteBasket(endpoint);
-    if (!basketDeleted) throw new Error("Basket couldn't be deleted.");
+    if (!basketDeleted) {
+      errorMessage = "Basket couldn't be deleted.";
+      throw new Error(errorMessage);
+    }
 
     res.status(204).send();
   } catch (e) {
     console.error(e);
-    res.status(404).send();
+    res.status(404).send(errorMessage);
   }
 });
 
@@ -75,15 +87,35 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
   // }
 
   let endpoint = req.params.endpoint;
+  let errorMessage = '';
 
   try {
+    if (!await pgApi.basketExists(endpoint)) {
+      errorMessage = "Endpoint does not exist."
+      throw new Error(errorMessage);
+    }
+    
     let requests = await pgApi.getRequests(endpoint);
-    if (!requests) throw new Error("Requests couldn't be fetched.");
+    if (!requests) {
+      errorMessage = "Requests couldn't be fetched.";
+      throw new Error(errorMessage);
+    }
 
-    res.json(requests);
+    for (let i = 0; i < requests.length; i++) {
+      if (requests[i].id) {
+        let mongoDocId = requests[i].body;
+        requests[i].body = await mongoGetRequest(
+          mongoDocId.replaceAll('"', "")
+        );
+      }
+    }
+
+    res
+      .setHeader("Content-Type", "application/json")
+      .send(JSON.stringify(requests));
   } catch (e) {
     console.error(e);
-    res.status(404).send();
+    res.status(404).send(errorMessage);
   }
 });
 
@@ -95,20 +127,39 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
   // }
 
   let endpoint = req.params.endpoint;
+  let errorMessage = '';
 
   try {
-    let isDuplicateBasket = await pgApi.isDuplicateBasket(endpoint);
-    if (isDuplicateBasket) {
-      res.status(403).send(`Failed to create a basket. ${endpoint} already exists.`);
+    if (await pgApi.basketExists(endpoint)) {
+      // 403 CONFLICT
+      res.status(403).send("Could not create basket: endpoint already exists.");
+    }
+
+    if (endpointIsTooLong(endpoint)) {
+      // 414 URI TOO LONG
+      res.status(414).send("Could not create basket: endpoint length cannot exceed 100 characters.");
+    }
+
+    if (endpointContainsSymbols(endpoint)) {
+      // 400 BAD REQUEST
+      res.status(400).send("Could not create basket: endpoint can only contain alphanumeric characters.");
+    }
+    
+    if (endpointOverlapsWeb(endpoint)) {
+      // 403 CONFLICT
+      res.status(403).send("Could not create basket: endpoint conflicts with reserved system path.");
     }
 
     let newBasket = await pgApi.createBasket(endpoint);
-    if (!newBasket) throw new Error("Couldn't create basket.");
+    if (!newBasket) {
+      errorMessage = "Couldn't create basket.";
+      throw new Error(errorMessage);
+    }
 
     res.status(201).send();
   } catch (e) {
     console.error(e);
-    res.status(404).send();
+    res.status(404).send(errorMessage);
   }
 });
 
@@ -119,41 +170,54 @@ server.get("/api/new_url_endpoint", async (req, res) => {
   //   res.status(403).send("API access denied");
   // }
 
+  let errorMessage = '';
   try {
     let newURLEndpoint = await pgApi.getNewURLEndpoint();
-    if (!newURLEndpoint) throw new Error("Couldn't generate new url endpoint.");
+    if (!newURLEndpoint) {
+      errorMessage = "Couldn't generate new url endpoint."
+      throw new Error(errorMessage);
+    }
 
     res.json(newURLEndpoint);
   } catch (e) {
     console.error(e);
-    res.status(404).send();
+    res.status(404).send(errorMessage);
   }
 });
 
-//Handles any type of request to the exposed endpoint, sends request data to request table
+//Handles any type of request to the exposed endpoint, sends request data to request table (webhooks use this endpoint)
 server.all("/:endpoint", async (req, res) => {
-  let method = req.method;
   let headers = JSON.stringify(req.headers);
+  let method = req.method;
   let body = req.body; //Stored in Mongo
   let endpoint = req.params.endpoint;
+  let errorMessage = '';
 
-  //Add the body to Mongo and get a document ID
-  let documentId = body ? Math.random() * 1000 : undefined;
-
-  // Try adding the request to the SQL database if it fails, send 404 error
   try {
+    if (!await pgApi.basketExists(endpoint)) {
+      errorMessage = "Endpoint does not exist."
+      throw new Error(errorMessage);
+    }
+    
+    //Add the body to Mongo and get a document ID
+    let documentId = await mongoInsert(body);
+
+    // Try adding the request to the SQL database if it fails, send 404 error
     let requestAdded = await pgApi.addRequest(
       endpoint,
-      method,
       headers,
+      method,
       documentId
     );
-    if (!requestAdded) throw new Error("Request couldn't be added.");
+    if (!requestAdded) {
+      errorMessage = "Request couldn't be added."
+      throw new Error(errorMessage);
+    }
 
     res.status(204).send();
   } catch (e) {
     console.error(e);
-    res.status(404).send();
+    res.status(404).send(errorMessage);
   }
 });
 
@@ -161,6 +225,11 @@ server.all("/:endpoint", async (req, res) => {
 server.use((error, req, res, _next) => {
   console.log(error);
   res.status(404).render("error", { error: error });
+});
+
+// Handler requests for all other/unknown endpoints
+server.use((req, res) => {
+  res.sendFile(path.resolve(__dirname, "dist", "index.html"));
 });
 
 server.listen(PORT, () => {

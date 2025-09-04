@@ -15,8 +15,8 @@ module.exports = class PostgreSQL {
     }
   }
 
-  // Checks if a basket exists
-  async isDuplicateBasket(urlEndpoint) {
+  // Checks if a basket exists (url endpoint is in db)
+  async basketExists(urlEndpoint) {
     return await this.getBasketId(urlEndpoint) !== false;
   }
 
@@ -26,8 +26,7 @@ module.exports = class PostgreSQL {
       let urlEndpoint;
       do {
         urlEndpoint = generateURLEndpoint();
-      }
-      while (await this.isDuplicateBasket(urlEndpoint));
+      } while (await this.basketExists(urlEndpoint));
 
       return urlEndpoint;
     } catch (e) {
@@ -36,9 +35,9 @@ module.exports = class PostgreSQL {
     }
 
     function generateURLEndpoint() {
-      const CHARS = '0123456789abcdefghijklmnopqrstuvwxyz';
+      const CHARS = "0123456789abcdefghijklmnopqrstuvwxyz";
       const URL_LENGTH = 7;
-      let url = '';
+      let url = "";
       for (let idx = 0; idx < URL_LENGTH; idx += 1) {
         let randomChar = CHARS[Math.floor(Math.random() * CHARS.length)];
         url += randomChar;
@@ -66,6 +65,9 @@ module.exports = class PostgreSQL {
   async deleteBasket(urlEndpoint) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
+      if (basketId === false) {
+        throw new Error("Could not delete basket: endpoint does not exist");
+      }
 
       let result = await pgQuery(
         "DELETE FROM baskets WHERE id = $1",
@@ -83,6 +85,9 @@ module.exports = class PostgreSQL {
   async clearBasket(urlEndpoint) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
+      if (basketId === false) {
+        throw new Error("Could not clear basket: endpoint does not exist");
+      }
 
       let result = await pgQuery(
         "DELETE FROM requests WHERE basket_id = $1",
@@ -97,15 +102,18 @@ module.exports = class PostgreSQL {
   }
 
   // Adds a request to the database
-  async addRequest(urlEndpoint, method, headers, mongoDocumentId) {
+  async addRequest(urlEndpoint, headers, method, mongoDocumentId) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
+      if (basketId === false) {
+        throw new Error("Could not add request: endpoint does not exist");
+      }
 
       let requestAdded = await pgQuery(
-        "INSERT INTO requests (basket_id, method, headers, body) VALUES ($1, $2, $3, $4)",
+        "INSERT INTO requests (basket_id, headers, method, body) VALUES ($1, $2, $3, $4)",
         basketId,
-        method,
         headers,
+        method,
         mongoDocumentId
       );
 
@@ -121,9 +129,12 @@ module.exports = class PostgreSQL {
   async getRequests(urlEndpoint) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
+      if (basketId === false) {
+        throw new Error("Could not get requests: endpoint does not exist");
+      }
 
       let result = await pgQuery(
-        "SELECT arrival_timestamp, method, headers, body FROM requests WHERE basket_id = $1",
+        "SELECT id, arrival_timestamp as timestamp, headers, method, body FROM requests WHERE basket_id = $1",
         basketId
       );
 
