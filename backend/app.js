@@ -234,7 +234,7 @@ server.all("/:endpoint", async (req, res) => {
     }
     
     //Add the body to Mongo and get a document ID
-    let documentId = await mongoInsert(body);
+    let documentId = await mongoInsertBody(body);
 
     // Try adding the request to the SQL database if it fails, send 404 error
     let requestAdded = await pgApi.addRequest(
