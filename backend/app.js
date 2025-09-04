@@ -12,7 +12,11 @@ const server = express();
 //Create API access variable
 const PostgreSQL = require("./lib/pg_api");
 const pgApi = new PostgreSQL();
-const { mongoInsert, mongoGetRequest } = require("./lib/mongo_connection");
+const {
+  mongoInsertBody,
+  mongoGetBody,
+  mongoDeleteBody,
+} = require("./lib/mongo_connection");
 
 //Import and use 'morgan' to log requests
 const morgan = require("morgan");
@@ -33,6 +37,11 @@ server.get("/", (_req, res) => res.redirect("/web"));
 
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
+  //Don't allow non-local requests to this endpoint
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
+
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -40,6 +49,16 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
     if (!await pgApi.basketExists(endpoint)) {
       errorMessage = "Endpoint does not exist."
       throw new Error(errorMessage);
+    }
+
+    //Get the requests from PG, then clear the bodies from mongo
+    let requests = await pgApi.getRequests(endpoint);
+    for (let i = 0; i < requests.length; i++) {
+      if (requests[i].body) {
+        let deleted = await mongoDeleteBody(requests[i].body);
+
+        if (!deleted) throw new Error("Mongo deletion issue");
+      }
     }
 
     let basketCleared = await pgApi.clearBasket(endpoint);
@@ -57,6 +76,11 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res) => {
+  //Don't allow non-local requests to this endpoint
+  // if (!req.headers.host.includes("localhost")) {
+  //   res.status(403).send("API access denied");
+  // }
+
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -64,6 +88,17 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
     if (!await pgApi.basketExists(endpoint)) {
       errorMessage = "Endpoint does not exist."
       throw new Error(errorMessage);
+    }
+
+    //Clear the basket's request bodies from mongo first
+    //Get the requests from PG, then clear the bodies from mongo
+    let requests = await pgApi.getRequests(endpoint);
+    for (let i = 0; i < requests.length; i++) {
+      if (requests[i].body) {
+        let deleted = await mongoDeleteBody(requests[i].body);
+
+        if (!deleted) throw new Error("Mongo deletion issue");
+      }
     }
 
     let basketDeleted = await pgApi.deleteBasket(endpoint);
@@ -101,12 +136,11 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
       throw new Error(errorMessage);
     }
 
+    // Get each request's body from mongo and replace the body property on it with what mongo returns
     for (let i = 0; i < requests.length; i++) {
       if (requests[i].id) {
         let mongoDocId = requests[i].body;
-        requests[i].body = await mongoGetRequest(
-          mongoDocId.replaceAll('"', "")
-        );
+        requests[i].body = await mongoGetBody(mongoDocId);
       }
     }
 
@@ -200,7 +234,7 @@ server.all("/:endpoint", async (req, res) => {
     }
     
     //Add the body to Mongo and get a document ID
-    let documentId = await mongoInsert(body);
+    let documentId = await mongoInsertBody(body);
 
     // Try adding the request to the SQL database if it fails, send 404 error
     let requestAdded = await pgApi.addRequest(

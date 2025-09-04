@@ -69,10 +69,7 @@ module.exports = class PostgreSQL {
         throw new Error("Could not delete basket: endpoint does not exist");
       }
 
-      let result = await pgQuery(
-        "DELETE FROM baskets WHERE id = $1",
-        basketId
-      );
+      let result = await pgQuery("DELETE FROM baskets WHERE id = $1", basketId);
 
       return result.rowCount > 0;
     } catch (e) {
@@ -112,8 +109,8 @@ module.exports = class PostgreSQL {
       let requestAdded = await pgQuery(
         "INSERT INTO requests (basket_id, headers, method, body) VALUES ($1, $2, $3, $4)",
         basketId,
-        headers,
         method,
+        headers,
         mongoDocumentId
       );
 
