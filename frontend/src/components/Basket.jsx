@@ -11,7 +11,7 @@ const Basket = ({ setBaskets }) => {
   const [requests, setRequests] = useState(null);
   const webSocketReference = useRef(null);
   const [webSocketEnabled, setWebSocketEnabled] = useState(true);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState({ text: null, type: null });
 
   const uri = `${window.location.origin}/${urlEndpoint}`;
   const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -21,7 +21,7 @@ const Basket = ({ setBaskets }) => {
     services.getRequests(urlEndpoint)
       .then(setRequests)
       .catch(() => {
-        setMessage('Error! Not found.');
+        setMessage({ text: 'Error! Not found.', type: 'error' });
         setTimeout(() => {
           navigate('/');
         }, 3000);
@@ -72,17 +72,12 @@ const Basket = ({ setBaskets }) => {
     services.clearBasket(urlEndpoint)
       .then(() => {
         setRequests([]);
-        setMessage('The basket has been successfully cleared!');
-        setTimeout(() => setMessage(null), 5000);
+        setMessage({ text: 'The basket has been successfully cleared!', type: 'success' });
+        setTimeout(() => setMessage({ text: null, type: null }), 5000);
       })
-      .catch((error) => {
-        if (error.response?.data === "Basket couldn't be cleared.") {
-          setMessage('Error! The basket could not be cleared, please try again.');
-          setTimeout(() => setMessage(null), 5000);
-        } else {
-          console.log('Error! The basket does not exist.')
-          navigate('/');
-        }
+      .catch(() => {
+        setMessage({ text: 'Your basket is empty! Nothing to clear.', type: 'error' });
+        setTimeout(() => setMessage({ text: null, type: null }), 5000);
       });
   };
 
@@ -101,7 +96,7 @@ const Basket = ({ setBaskets }) => {
   return (
     <div>
       <h1>Basket: {urlEndpoint}</h1>
-      <Notification message={message} className='error'/>
+      <Notification message={message.text} className={message.type}/>
       { requests
         ? <div>
             <div className='uri-container'>
