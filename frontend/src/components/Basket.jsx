@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Notification from './Notification';
 import services from '../services/services';
 import Request from './Request';
+import CopyButton from './CopyButton';
 
 const Basket = ({ setBaskets }) => {
   const urlEndpoint = useParams().urlEndpoint;
   const navigate = useNavigate();
-  const [requests, setRequests] = useState([]);
+  const [requests, setRequests] = useState(null);
   const webSocketReference = useRef(null);
   const [webSocketEnabled, setWebSocketEnabled] = useState(true);
   const [message, setMessage] = useState(null);
@@ -19,8 +20,13 @@ const Basket = ({ setBaskets }) => {
   const getRequestsHook = useCallback(() => {
     services.getRequests(urlEndpoint)
       .then(setRequests)
-      .catch(() => setRequests([]));
-  }, [urlEndpoint]);
+      .catch(() => {
+        setMessage('Error! Not found.');
+        setTimeout(() => {
+          navigate('/');
+        }, 3000);
+      });
+  }, [urlEndpoint, navigate]);
 
   useEffect(() => {
     getRequestsHook();
@@ -31,7 +37,7 @@ const Basket = ({ setBaskets }) => {
       socket.onmessage = (event) => {
         const message = JSON.parse(event.data);
         if (message.type === 'new_request') {
-          setRequests(previous => [...previous, message.data]);
+          setRequests(previous => [message.data, ...previous, ]);
         }
       };
 
@@ -96,31 +102,50 @@ const Basket = ({ setBaskets }) => {
     <div>
       <h1>Basket: {urlEndpoint}</h1>
       <Notification message={message} />
-      <div>
-        <button type="button" onClick={deleteBasket}>Delete basket</button>
-        <button type="button" onClick={clearBasket}>Clear basket</button>
-        <button type="button" onClick={refreshBasket}>Refresh basket</button>
-        <button type="button" onClick={toggleAutoRefresh}>{autoRefreshLabel}</button>
-      </div>
-      <div>
-        { requests.length > 0
-          ? <>
-              <p>
-                Requests collected at <kbd>{uri}</kbd><br />
-                Total requests: {requests.length}
-              </p>
-              <div>
-                {requests.map((request) => {
-                  return <Request key={JSON.stringify(request)} request={request} />
-                })}
-              </div>
-            </>
-          : <>
-              <h2>Empty basket!</h2>
-              <p>Send requests at <kbd>{uri}</kbd></p>
-            </>
-        }
-      </div>
+      { requests
+        ? <div>
+            <div className='uri-container'>
+              <span>
+                Send requests at <kbd>{uri}</kbd>
+              </span>
+              <CopyButton text={uri} />
+            </div>
+            <div>
+              <button type='button' className='basket-button' onClick={deleteBasket}>
+                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+                Delete basket
+              </button>
+              <button type='button' className='basket-button' onClick={clearBasket}>
+                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser-icon lucide-eraser"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg></span>
+                Clear basket
+              </button>
+              <button type='button' className='basket-button' onClick={refreshBasket}>
+                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw-icon lucide-rotate-ccw"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>
+                Refresh basket
+              </button>
+              <button type='button' className='basket-button' onClick={toggleAutoRefresh}>
+                <span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></span>
+                {autoRefreshLabel}
+              </button>
+            </div>
+            <div>
+              { requests.length > 0
+                ? <>
+                    <p><strong>Total requests: {requests.length}</strong></p>
+                    <div>
+                      {requests.map((request) => {
+                        return <Request key={JSON.stringify(request)} request={request} />
+                      })}
+                    </div>
+                  </>
+                : <>
+                    <h3 className='empty-basket'>Empty basket</h3>
+                  </>
+              }
+            </div>
+          </div>
+        : <></>
+      }
     </div>
   );
 };
