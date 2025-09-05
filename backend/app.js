@@ -41,15 +41,12 @@ server.use(express.text({ type: "*/*" }));
 // Add static middlewear to return files with static content
 server.use("/web", express.static('dist')); // changed the base url where static content is served
 server.get("/web/:endpoint", async (req, res) => {
-  if (!await pgApi.basketExists(req.params.endpoint)) {
-    // res.status(404).send("Invalid basket name");
-    res.redirect("/web");
-  }
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
-server.get(/^\/web(?:\/.*)?$/, async (req, res) => {
-  // res.status(404).send("Invalid basket name");
-  res.redirect("/web");
+server.get(/^\/web(?:\/.*)?$/, async (_req, res) => {
+  res.status(404).send("Invalid basket name");
+  // Alternatively, can redirect to /web
+  // res.redirect("/web");
 });
 server.get("/", (_req, res) => res.redirect("/web"));
 
@@ -275,8 +272,9 @@ server.use((error, _req, res, _next) => {
 
 // Handler requests for all other/unknown endpoints
 server.use((_req, res) => {
-  // res.sendFile(path.resolve(__dirname, "dist", "index.html"));
-  res.redirect("/web");
+  res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+  // Alternatively, can redirect to /web
+  // res.redirect("/web");
 });
 
 httpServer.listen(PORT, () => {
