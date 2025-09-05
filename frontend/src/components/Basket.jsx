@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Notification from './Notification';
 import services from '../services/services';
 import Request from './Request';
 import CopyButton from './CopyButton';
+import Notification from './Notification';
 
 const Basket = ({ setBaskets }) => {
   const urlEndpoint = useParams().urlEndpoint;
@@ -101,7 +101,7 @@ const Basket = ({ setBaskets }) => {
   return (
     <div>
       <h1>Basket: {urlEndpoint}</h1>
-      <Notification message={message} />
+      <Notification message={message} className='error'/>
       { requests
         ? <div>
             <div className='uri-container'>
