@@ -7,7 +7,7 @@ module.exports = {
     return /[^a-zA-Z0-9]/.test(urlEndpoint);
   },
 
-  endpointOverlapsWeb(urlEndpoint) {
-    return urlEndpoint === 'web';
+  endpointIsReserved(urlEndpoint) {
+    return urlEndpoint === 'web' || urlEndpoint === 'api';
   }
 }

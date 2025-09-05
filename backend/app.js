@@ -29,25 +29,29 @@ const morgan = require("morgan");
 server.use(morgan("dev"));
 
 // Create validator
-const { endpointIsTooLong, endpointContainsSymbols, endpointOverlapsWeb } = require("./lib/validator");
+const { 
+  endpointIsTooLong, 
+  endpointContainsSymbols, 
+  endpointIsReserved 
+} = require("./lib/validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
 
 // Add static middlewear to return files with static content
 server.use("/web", express.static('dist')); // changed the base url where static content is served
-server.get(/^\/web(?:\/.*)?$/, (_req, res) => {
+server.get("/web/:endpoint", async (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+server.get(/^\/web(?:\/.*)?$/, async (_req, res) => {
+  res.status(404).send("Invalid basket name");
+  // Alternatively, can redirect to /web
+  // res.redirect("/web");
 });
 server.get("/", (_req, res) => res.redirect("/web"));
 
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -82,11 +86,6 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -122,11 +121,6 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to get all of the requests in a basket
 server.get("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -161,33 +155,36 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to create a new basket
 server.post("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
   try {
     if (await pgApi.basketExists(endpoint)) {
-      // 403 CONFLICT
-      res.status(403).send("Could not create basket: endpoint already exists.");
+      // 409 CONFLICT
+      errorMessage = "Could not create basket: endpoint already exists.";
+      res.status(409).send(errorMessage);
+      throw new Error(errorMessage);
     }
 
     if (endpointIsTooLong(endpoint)) {
       // 414 URI TOO LONG
-      res.status(414).send("Could not create basket: endpoint length cannot exceed 100 characters.");
+      errorMessage = "Could not create basket: endpoint length cannot exceed 100 characters.";
+      res.status(414).send(errorMessage);
+      throw new Error(errorMessage);
     }
 
     if (endpointContainsSymbols(endpoint)) {
       // 400 BAD REQUEST
-      res.status(400).send("Could not create basket: endpoint can only contain alphanumeric characters.");
+      errorMessage = "Could not create basket: endpoint can only contain alphanumeric characters.";
+      res.status(400).send(errorMessage);
+      throw new Error(errorMessage);
     }
     
-    if (endpointOverlapsWeb(endpoint)) {
-      // 403 CONFLICT
-      res.status(403).send("Could not create basket: endpoint conflicts with reserved system path.");
+    if (endpointIsReserved(endpoint)) {
+      // 403 FORBIDDEN - /web and /api are reserved
+      errorMessage = "Could not create basket: endpoint conflicts with reserved system path.";
+      res.status(403).send(errorMessage);
+      throw new Error(errorMessage);
     }
 
     let newBasket = await pgApi.createBasket(endpoint);
@@ -204,12 +201,7 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
 });
 
 // Handles requests to create a new url endpoint
-server.get("/api/new_url_endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
+server.get("/api/new_url_endpoint", async (_req, res) => {
   let errorMessage = '';
   try {
     let newURLEndpoint = await pgApi.getNewURLEndpoint();
@@ -281,14 +273,16 @@ server.all("/:endpoint", async (req, res) => {
 });
 
 //Error handler (Last Line of Defense)
-server.use((error, req, res, _next) => {
+server.use((error, _req, res, _next) => {
   console.log(error);
   res.status(404).render("error", { error: error });
 });
 
 // Handler requests for all other/unknown endpoints
-server.use((req, res) => {
+server.use((_req, res) => {
   res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+  // Alternatively, can redirect to /web
+  // res.redirect("/web");
 });
 
 httpServer.listen(PORT, () => {
