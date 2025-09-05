@@ -12,6 +12,7 @@ body {
 
 header {
   font-size: x-large;
+  margin-bottom: 16px;
 }
 
 header a,
@@ -91,6 +92,8 @@ header a:visited {
 
 .modal-body {
   padding: 16px;
+  font-size: 18px;
+  font-weight: lighter;
 }
 
 .notification.error {
@@ -206,4 +209,40 @@ header a:visited {
   padding: 6px 10px;
   display: inline-block;
   margin: 10px 0;
+}
+
+.new-basket-card {
+  background: #f3f4f6;         
+  border: 1px solid #e5e7eb; 
+  border-radius: 12px;
+  padding: 50px;
+  text-align: center;
+  width: 100%;
+  max-width: 640px;             
+  margin: 0 auto;               
+}
+
+.new-basket-card h1 {
+  margin: 0 0 20px;              
+  font-size: 60px;
+  font-weight: 550;
+}
+
+.new-basket-card > p {
+  margin: 0 0 20px;           
+  font-size: 20px;
+  font-weight: lighter;
+}
+
+.baskets-title {
+  font-weight: 350;      
+  margin: 0 0 15px;
+}
+
+.baskets-list li + li {
+  margin-top: 4px;
+}
+
+.create-btn {
+  margin-left: 6px;
 }
