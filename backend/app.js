@@ -161,22 +161,30 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
   try {
     if (await pgApi.basketExists(endpoint)) {
       // 409 CONFLICT
-      res.status(409).send("Could not create basket: endpoint already exists.");
+      errorMessage = "Could not create basket: endpoint already exists.";
+      res.status(409).send(errorMessage);
+      throw new Error(errorMessage);
     }
 
     if (endpointIsTooLong(endpoint)) {
       // 414 URI TOO LONG
-      res.status(414).send("Could not create basket: endpoint length cannot exceed 100 characters.");
+      errorMessage = "Could not create basket: endpoint length cannot exceed 100 characters.";
+      res.status(414).send(errorMessage);
+      throw new Error(errorMessage);
     }
 
     if (endpointContainsSymbols(endpoint)) {
       // 400 BAD REQUEST
-      res.status(400).send("Could not create basket: endpoint can only contain alphanumeric characters.");
+      errorMessage = "Could not create basket: endpoint can only contain alphanumeric characters.";
+      res.status(400).send(errorMessage);
+      throw new Error(errorMessage);
     }
     
     if (endpointIsReserved(endpoint)) {
       // 403 FORBIDDEN - /web and /api are reserved
-      res.status(403).send("Could not create basket: endpoint conflicts with reserved system path.");
+      errorMessage = "Could not create basket: endpoint conflicts with reserved system path.";
+      res.status(403).send(errorMessage);
+      throw new Error(errorMessage);
     }
 
     let newBasket = await pgApi.createBasket(endpoint);
