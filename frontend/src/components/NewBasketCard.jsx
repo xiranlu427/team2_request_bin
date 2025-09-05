@@ -85,10 +85,12 @@ function NewBasketCard ({ setBaskets }) {
   const modalTitle = 
     creationResult?.status === "success" ? "Created" : "Error";
 
-const modalVariant =
-  creationResult?.status === "success" ? "success"
-  : creationResult ? "error"
-  : "neutral";
+  const modalVariant =
+    creationResult?.status === "success" 
+    ? "success"
+    : creationResult 
+      ? "error"
+      : "neutral";
 
   const refreshCard = async () => {
     try {

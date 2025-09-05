@@ -6,6 +6,10 @@
   :root { font-family: InterVariable, sans-serif; }
 }
 
+body {
+  padding: 1em;
+}
+
 header {
   font-size: x-large;
 }
@@ -123,4 +127,83 @@ header a:visited {
 
 .actions > :last-child {
   margin-left: auto; 
+}
+.request-box {
+  font-family: monospace;
+  border: 2px solid black;
+  padding: 8px;
+  max-width: 600px;
+  margin-bottom: 8px;
+}
+
+.request-info {
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+
+.request-content {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.request-content th {
+  border: 1px solid black;
+  padding: 6px;
+  text-align: left;
+  vertical-align: top;
+  width: 100px;
+}
+
+.request-content td {
+  border: 1px solid black;
+  padding: 6px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.scroll-box {
+  min-height: 50px;
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  padding: 4px;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+}
+
+.basket-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 2;
+  gap: 6px;
+  margin-right: 8px;
+  margin-bottom: 16px;
+}
+
+.basket-button svg {
+  display: block;
+}
+
+.uri-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.uri-container kbd {
+  padding: 2px 4px;
+  background-color: #f0f0f0;
+}
+
+.empty-basket {
+  background-color: #fef9c3;
+  color: #854d0e;
+  padding: 6px 10px;
+  display: inline-block;
+  margin: 10px 0;
 }
