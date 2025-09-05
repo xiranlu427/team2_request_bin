@@ -100,6 +100,10 @@ header a:visited {
   color: red;
 }
 
+.notification.success {
+  color: green;
+}
+
 #domain-label {
   font-weight: bold;
 }
