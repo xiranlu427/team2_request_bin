@@ -29,25 +29,32 @@ const morgan = require("morgan");
 server.use(morgan("dev"));
 
 // Create validator
-const { endpointIsTooLong, endpointContainsSymbols, endpointOverlapsWeb } = require("./lib/validator");
+const { 
+  endpointIsTooLong, 
+  endpointContainsSymbols, 
+  endpointOverlapsWeb 
+} = require("./lib/validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
 
 // Add static middlewear to return files with static content
 server.use("/web", express.static('dist')); // changed the base url where static content is served
-server.get(/^\/web(?:\/.*)?$/, (_req, res) => {
+server.get("/web/:endpoint", async (req, res) => {
+  if (!await pgApi.basketExists(req.params.endpoint)) {
+    // res.status(404).send("Invalid basket name");
+    res.redirect("/web");
+  }
   res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+server.get(/^\/web(?:\/.*)?$/, async (req, res) => {
+  // res.status(404).send("Invalid basket name");
+  res.redirect("/web");
 });
 server.get("/", (_req, res) => res.redirect("/web"));
 
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -82,11 +89,6 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -122,11 +124,6 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to get all of the requests in a basket
 server.get("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -161,11 +158,6 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to create a new basket
 server.post("/api/baskets/:endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
   let endpoint = req.params.endpoint;
   let errorMessage = '';
 
@@ -186,7 +178,7 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
     }
     
     if (endpointOverlapsWeb(endpoint)) {
-      // 403 CONFLICT
+      // 403 CONFLICT - /web is reserved for the home page
       res.status(403).send("Could not create basket: endpoint conflicts with reserved system path.");
     }
 
@@ -204,12 +196,7 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
 });
 
 // Handles requests to create a new url endpoint
-server.get("/api/new_url_endpoint", async (req, res) => {
-  //Don't allow non-local requests to this endpoint
-  // if (!req.headers.host.includes("localhost")) {
-  //   res.status(403).send("API access denied");
-  // }
-
+server.get("/api/new_url_endpoint", async (_req, res) => {
   let errorMessage = '';
   try {
     let newURLEndpoint = await pgApi.getNewURLEndpoint();
@@ -281,14 +268,15 @@ server.all("/:endpoint", async (req, res) => {
 });
 
 //Error handler (Last Line of Defense)
-server.use((error, req, res, _next) => {
+server.use((error, _req, res, _next) => {
   console.log(error);
   res.status(404).render("error", { error: error });
 });
 
 // Handler requests for all other/unknown endpoints
-server.use((req, res) => {
-  res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+server.use((_req, res) => {
+  // res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+  res.redirect("/web");
 });
 
 httpServer.listen(PORT, () => {
