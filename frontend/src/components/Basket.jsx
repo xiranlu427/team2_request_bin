@@ -1,19 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import Notification from './Notification';
 import services from '../services/services';
 import Request from './Request';
-
-const Notification = ({ message }) => {
-  if (message === null) {
-    return null;
-  }
-
-  return (
-    <div classname='error'>
-      {message}
-    </div>
-  )
-}
 
 const Basket = ({ setBaskets }) => {
   const urlEndpoint = useParams().urlEndpoint;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Modal from "./Modal";
+import Notification from "./Notification";
 import { getRandomNewBasketName, createNewBasket } from "../services/services";
 
 // the "create a new basket" container on homepage
@@ -81,6 +82,14 @@ function NewBasketCard ({ setBaskets }) {
     }
   };
 
+  const modalTitle = 
+    creationResult?.status === "success" ? "Created" : "Error";
+
+const modalVariant =
+  creationResult?.status === "success" ? "success"
+  : creationResult ? "error"
+  : "neutral";
+
   const refreshCard = async () => {
     try {
       const name = await getRandomNewBasketName();
@@ -140,7 +149,7 @@ function NewBasketCard ({ setBaskets }) {
       <h1>New Basket</h1>
       <p>Create a basket to collect and inspect HTTP requests</p>
       <form className="new-basket-form" onSubmit={handleFormSubmit} noValidate>
-        <label htmlFor="basket-name-input">{domainName}</label>
+        <label htmlFor="basket-name-input" id="domain-label">{domainName}</label>
         <input
           type="text"
           id="basket-name-input"
@@ -154,14 +163,15 @@ function NewBasketCard ({ setBaskets }) {
           }}
         />
         <button type="submit" className="create-btn">Create</button>
-        {fieldError && (
-          <p id="basket-name-error" className="field-error" role="alert">
-            {fieldError}
-          </p>
-        )}
+        {fieldError && <Notification message={fieldError} className="error" />}
       </form>
 
-      <Modal isOpen={isModalOpen} onClose={closeModal}>
+      <Modal 
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={modalTitle}
+        variant={modalVariant}
+      >
         <ModalContent />
       </Modal>
     </div>

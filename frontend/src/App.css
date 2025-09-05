@@ -50,7 +50,77 @@ header a:visited {
   background: #fff;
   max-width: 520px;
   width: min(92vw, 520px);
-  padding: 16px;
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;       
+  color: #0f172a;       
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.modal-close-icon {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: inherit;          
+  cursor: pointer;
+  padding: 0;
+}
+
+.modal-error .modal-header   { background: #ffd3d3; color: red} 
+.modal-success .modal-header { background: #d8ffe6; color: green} 
+.modal-neutral .modal-header { background: white; color: black} 
+
+.modal-body {
+  padding: 16px;
+}
+
+.notification.error {
+  color: red;
+}
+
+#domain-label {
+  font-weight: bold;
+}
+
+.baskets-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.baskets-list a {
+  text-decoration: none;
+  color: rgb(34, 100, 255);
+}
+
+.baskets-list a:hover,
+.baskets-list a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px; 
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actions > :last-child {
+  margin-left: auto; 
 }
