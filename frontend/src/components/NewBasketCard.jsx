@@ -124,7 +124,7 @@ function NewBasketCard ({ setBaskets }) {
       await refreshCard();
     } catch (err) {
       const status = err.response?.status;
-      if (status === 403) {
+      if (status === 409) {
         await refreshCard();
         setCreationResult({ 
           status: 'conflict', 
@@ -135,6 +135,12 @@ function NewBasketCard ({ setBaskets }) {
         setCreationResult({ 
           status: 'invalid', 
           message: `Failed to create basket: name is invalid.`
+        });
+      } else if (status === 403) {
+        await refreshCard();
+        setCreationResult({ 
+          status: 'forbidden', 
+          message: `Failed to create basket: ${basketName} is a reserved system path.`
         });
       } else {
         setCreationResult({
