@@ -32,7 +32,7 @@ server.use(morgan("dev"));
 const { 
   endpointIsTooLong, 
   endpointContainsSymbols, 
-  endpointOverlapsWeb 
+  endpointIsReserved 
 } = require("./lib/validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
@@ -160,8 +160,8 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
 
   try {
     if (await pgApi.basketExists(endpoint)) {
-      // 403 CONFLICT
-      res.status(403).send("Could not create basket: endpoint already exists.");
+      // 409 CONFLICT
+      res.status(409).send("Could not create basket: endpoint already exists.");
     }
 
     if (endpointIsTooLong(endpoint)) {
@@ -174,8 +174,8 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
       res.status(400).send("Could not create basket: endpoint can only contain alphanumeric characters.");
     }
     
-    if (endpointOverlapsWeb(endpoint)) {
-      // 403 CONFLICT - /web is reserved for the home page
+    if (endpointIsReserved(endpoint)) {
+      // 403 FORBIDDEN - /web and /api are reserved
       res.status(403).send("Could not create basket: endpoint conflicts with reserved system path.");
     }
 
