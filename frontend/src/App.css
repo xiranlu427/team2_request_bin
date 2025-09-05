@@ -6,8 +6,13 @@
   :root { font-family: InterVariable, sans-serif; }
 }
 
+body {
+  padding: 1em;
+}
+
 header {
   font-size: x-large;
+  margin-bottom: 16px;
 }
 
 header a,
@@ -50,7 +55,198 @@ header a:visited {
   background: #fff;
   max-width: 520px;
   width: min(92vw, 520px);
-  padding: 16px;
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;       
+  color: #0f172a;       
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.modal-close-icon {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: inherit;          
+  cursor: pointer;
+  padding: 0;
+}
+
+.modal-error .modal-header   { background: #ffd3d3; color: red} 
+.modal-success .modal-header { background: #d8ffe6; color: green} 
+.modal-neutral .modal-header { background: white; color: black} 
+
+.modal-body {
+  padding: 16px;
+  font-size: 18px;
+  font-weight: lighter;
+}
+
+.notification.error {
+  color: red;
+}
+
+.notification.success {
+  color: green;
+}
+
+#domain-label {
+  font-weight: bold;
+}
+
+.baskets-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.baskets-list a {
+  text-decoration: none;
+  color: rgb(34, 100, 255);
+}
+
+.baskets-list a:hover,
+.baskets-list a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px; 
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actions > :last-child {
+  margin-left: auto; 
+}
+.request-box {
+  font-family: monospace;
+  border: 2px solid black;
+  padding: 8px;
+  max-width: 600px;
+  margin-bottom: 8px;
+}
+
+.request-info {
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+
+.request-content {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.request-content th {
+  border: 1px solid black;
+  padding: 6px;
+  text-align: left;
+  vertical-align: top;
+  width: 100px;
+}
+
+.request-content td {
+  border: 1px solid black;
+  padding: 6px;
+  text-align: left;
+  vertical-align: top;
+  word-break: break-word;
+}
+
+.scroll-box {
+  min-height: 50px;
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  padding: 4px;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+}
+
+.basket-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 2;
+  gap: 6px;
+  margin-right: 8px;
+  margin-bottom: 16px;
+}
+
+.basket-button svg {
+  display: block;
+}
+
+.uri-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.uri-container kbd {
+  padding: 2px 4px;
+  background-color: #f0f0f0;
+}
+
+.empty-basket {
+  background-color: #fef9c3;
+  color: #854d0e;
+  padding: 6px 10px;
+  display: inline-block;
+  margin: 10px 0;
+}
+
+.new-basket-card {
+  background: #f3f4f6;         
+  border: 1px solid #e5e7eb; 
+  border-radius: 12px;
+  padding: 50px;
+  text-align: center;
+  width: 100%;
+  max-width: 640px;             
+  margin: 0 auto;               
+}
+
+.new-basket-card h1 {
+  margin: 0 0 20px;              
+  font-size: 60px;
+  font-weight: 550;
+}
+
+.new-basket-card > p {
+  margin: 0 0 20px;           
+  font-size: 20px;
+  font-weight: lighter;
+}
+
+.baskets-title {
+  font-weight: 350;      
+  margin: 0 0 15px;
+}
+
+.baskets-list li + li {
+  margin-top: 4px;
+}
+
+.create-btn {
+  margin-left: 6px;
 }
