@@ -13,7 +13,7 @@ const Basket = ({ setBaskets }) => {
   const [webSocketEnabled, setWebSocketEnabled] = useState(true);
   const [message, setMessage] = useState({ text: null, type: null });
 
-  const uri = `${window.location.origin}/${urlEndpoint}`;
+  const uri = `${window.location.origin}/api/${urlEndpoint}`;
   const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const autoRefreshLabel = webSocketEnabled ? 'Disable auto-refresh' : 'Enable auto-refresh';
 
