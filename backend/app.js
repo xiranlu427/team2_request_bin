@@ -229,7 +229,7 @@ webSocketServer.on('connection', (ws) => {
 });
 
 //Handles any type of request to the exposed endpoint, sends request data to request table (webhooks use this endpoint)
-server.all("/:endpoint", async (req, res) => {
+server.all("/api/:endpoint", async (req, res) => {
   let headers = JSON.stringify(req.headers);
   let method = req.method;
   let body = req.body; //Stored in Mongo
