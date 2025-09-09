@@ -29,34 +29,22 @@ const morgan = require("morgan");
 server.use(morgan("dev"));
 
 // Create validator
-const { 
-  endpointIsTooLong, 
-  endpointContainsSymbols, 
-  endpointIsReserved 
+const {
+  endpointIsTooLong,
+  endpointContainsSymbols,
+  endpointIsReserved,
 } = require("./lib/validator");
 
 //Add body parsing middlewear to make incoming bodies text, regardless of the type
 server.use(express.text({ type: "*/*" }));
 
-// Add static middlewear to return files with static content
-server.use("/web", express.static('dist')); // changed the base url where static content is served
-server.get("/web/:endpoint", async (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
-server.get(/^\/web(?:\/.*)?$/, async (_req, res) => {
-  res.status(404).send("Invalid basket name");
-  // Alternatively, can redirect to /web
-  // res.redirect("/web");
-});
-server.get("/", (_req, res) => res.redirect("/web"));
-
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
-  let errorMessage = '';
+  let errorMessage = "";
 
   try {
-    if (!await pgApi.basketExists(endpoint)) {
+    if (!(await pgApi.basketExists(endpoint))) {
       errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
@@ -87,10 +75,10 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
-  let errorMessage = '';
+  let errorMessage = "";
 
   try {
-    if (!await pgApi.basketExists(endpoint)) {
+    if (!(await pgApi.basketExists(endpoint))) {
       errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
@@ -122,14 +110,14 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to get all of the requests in a basket
 server.get("/api/baskets/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
-  let errorMessage = '';
+  let errorMessage = "";
 
   try {
-    if (!await pgApi.basketExists(endpoint)) {
+    if (!(await pgApi.basketExists(endpoint))) {
       errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
-    
+
     let requests = await pgApi.getRequests(endpoint);
     if (!requests) {
       errorMessage = "Requests couldn't be fetched.";
@@ -156,7 +144,7 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
 // Handles requests to create a new basket
 server.post("/api/baskets/:endpoint", async (req, res) => {
   let endpoint = req.params.endpoint;
-  let errorMessage = '';
+  let errorMessage = "";
 
   try {
     if (await pgApi.basketExists(endpoint)) {
@@ -168,21 +156,24 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
 
     if (endpointIsTooLong(endpoint)) {
       // 414 URI TOO LONG
-      errorMessage = "Could not create basket: endpoint length cannot exceed 100 characters.";
+      errorMessage =
+        "Could not create basket: endpoint length cannot exceed 100 characters.";
       res.status(414).send(errorMessage);
       throw new Error(errorMessage);
     }
 
     if (endpointContainsSymbols(endpoint)) {
       // 400 BAD REQUEST
-      errorMessage = "Could not create basket: endpoint can only contain alphanumeric characters.";
+      errorMessage =
+        "Could not create basket: endpoint can only contain alphanumeric characters.";
       res.status(400).send(errorMessage);
       throw new Error(errorMessage);
     }
-    
+
     if (endpointIsReserved(endpoint)) {
       // 403 FORBIDDEN - /web and /api are reserved
-      errorMessage = "Could not create basket: endpoint conflicts with reserved system path.";
+      errorMessage =
+        "Could not create basket: endpoint conflicts with reserved system path.";
       res.status(403).send(errorMessage);
       throw new Error(errorMessage);
     }
@@ -202,7 +193,7 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
 
 // Handles requests to create a new url endpoint
 server.get("/api/new_url_endpoint", async (_req, res) => {
-  let errorMessage = '';
+  let errorMessage = "";
   try {
     let newURLEndpoint = await pgApi.getNewURLEndpoint();
     if (!newURLEndpoint) {
@@ -218,13 +209,13 @@ server.get("/api/new_url_endpoint", async (_req, res) => {
 });
 
 // Handles connection for WebSocket(s) on client(s)
-webSocketServer.on('connection', (ws) => {
-  console.log('WebSocket client connected!');
+webSocketServer.on("connection", (ws) => {
+  console.log("WebSocket client connected!");
 
-  ws.on('error', console.error);
+  ws.on("error", console.error);
 
-  ws.on('close', () => {
-    console.log('WebSocket client closed!')
+  ws.on("close", () => {
+    console.log("WebSocket client closed!");
   });
 });
 
@@ -234,14 +225,14 @@ server.all("/api/:endpoint", async (req, res) => {
   let method = req.method;
   let body = req.body; //Stored in Mongo
   let endpoint = req.params.endpoint;
-  let errorMessage = '';
+  let errorMessage = "";
 
   try {
-    if (!await pgApi.basketExists(endpoint)) {
+    if (!(await pgApi.basketExists(endpoint))) {
       errorMessage = "Endpoint does not exist.";
       throw new Error(errorMessage);
     }
-    
+
     //Add the body to Mongo and get a document ID
     let documentId = await mongoInsertBody(body);
 
@@ -261,7 +252,7 @@ server.all("/api/:endpoint", async (req, res) => {
     let request = { timestamp: new Date(), method, headers, body, endpoint };
     webSocketServer.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify({ type: 'new_request', data: request}));
+        client.send(JSON.stringify({ type: "new_request", data: request }));
       }
     });
 
@@ -276,13 +267,6 @@ server.all("/api/:endpoint", async (req, res) => {
 server.use((error, _req, res, _next) => {
   console.log(error);
   res.status(404).render("error", { error: error });
-});
-
-// Handler requests for all other/unknown endpoints
-server.use((_req, res) => {
-  res.sendFile(path.resolve(__dirname, "dist", "index.html"));
-  // Alternatively, can redirect to /web
-  // res.redirect("/web");
 });
 
 httpServer.listen(PORT, () => {
