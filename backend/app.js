@@ -37,7 +37,6 @@ server.use(express.text({ type: "*/*" }));
 //Handles requests to clear the basket
 server.put("/api/baskets/:endpoint", async (req, res, next) => {
   let endpoint = req.params.endpoint;
-  let errorMessage = "";
 
   try {
     if (!(await pgApi.basketExists(endpoint))) {
@@ -74,7 +73,6 @@ server.put("/api/baskets/:endpoint", async (req, res, next) => {
 // Handles requests to delete a basket
 server.delete("/api/baskets/:endpoint", async (req, res, next) => {
   let endpoint = req.params.endpoint;
-  let errorMessage = "";
 
   try {
     if (!(await pgApi.basketExists(endpoint))) {
@@ -112,7 +110,6 @@ server.delete("/api/baskets/:endpoint", async (req, res, next) => {
 // Handles requests to get all of the requests in a basket
 server.get("/api/baskets/:endpoint", async (req, res, next) => {
   let endpoint = req.params.endpoint;
-  let errorMessage = "";
 
   try {
     if (!(await pgApi.basketExists(endpoint))) {
@@ -120,12 +117,6 @@ server.get("/api/baskets/:endpoint", async (req, res, next) => {
     }
 
     let requests = await pgApi.getRequests(endpoint);
-    if (!requests) {
-      const err = new Error("Requests couldn't be fetched.");
-      err.status = 500;
-      throw err;
-    }
-
     // Get each request's body from mongo and replace the body property on it with what mongo returns
     for (let i = 0; i < requests.length; i++) {
       if (requests[i].body) {

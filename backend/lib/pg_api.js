@@ -4,20 +4,29 @@ module.exports = class PostgreSQL {
   //Returns the id of a basket based on an endpoint
   async getBasketId(urlEndpoint) {
     try {
-      let basketId = await pgQuery(
+      let result = await pgQuery(
         "SELECT id FROM baskets WHERE url_endpoint = $1",
         urlEndpoint
       );
-      return basketId.rows[0].id;
+      return result.rowCount ? result.rows[0].id : null;
     } catch (e) {
-      console.error(`Couldn't get basketId: ${e}`);
-      return false;
+      console.error(`getBasketId failed: ${e}`);
+      throw e;
     }
   }
 
   // Checks if a basket exists (url endpoint is in db)
   async basketExists(urlEndpoint) {
-    return await this.getBasketId(urlEndpoint) !== false;
+    try {
+      const result = await pgQuery(
+        "SELECT 1 FROM baskets WHERE url_endpoint = $1",
+        urlEndpoint
+      );
+      return result.rowCount > 0;
+    } catch (e) {
+      console.error(`basketExists failed: ${e.message}`);
+      throw e;
+    }
   }
 
   // Return a potential url endpoint
@@ -31,7 +40,7 @@ module.exports = class PostgreSQL {
       return urlEndpoint;
     } catch (e) {
       console.error(`Couldn't create url endpoint: ${e}`);
-      return false;
+      throw e;
     }
 
     function generateURLEndpoint() {
@@ -50,14 +59,14 @@ module.exports = class PostgreSQL {
   async createBasket(urlEndpoint) {
     try {
       let result = await pgQuery(
-        "INSERT INTO baskets (url_endpoint) VALUES ($1)",
+        "INSERT INTO baskets (url_endpoint) VALUES ($1) ON CONFLICT (url_endpoint) DO NOTHING RETURNING id",
         urlEndpoint
       );
 
       return result.rowCount > 0;
     } catch (e) {
       console.error(`Couldn't create basket: ${e}`);
-      return false;
+      throw e;
     }
   }
 
@@ -65,16 +74,14 @@ module.exports = class PostgreSQL {
   async deleteBasket(urlEndpoint) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
-      if (basketId === false) {
-        throw new Error("Could not delete basket: endpoint does not exist");
-      }
+      if (basketId == null) return false;
 
+      await pgQuery("DELETE FROM requests WHERE basket_id = $1", basketId);
       let result = await pgQuery("DELETE FROM baskets WHERE id = $1", basketId);
-
       return result.rowCount > 0;
     } catch (e) {
       console.error(`Couldn't delete basket: ${e}`);
-      return false;
+      throw e;
     }
   }
 
@@ -82,9 +89,7 @@ module.exports = class PostgreSQL {
   async clearBasket(urlEndpoint) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
-      if (basketId === false) {
-        throw new Error("Could not clear basket: endpoint does not exist");
-      }
+      if (basketId == null) return false;
 
       let result = await pgQuery(
         "DELETE FROM requests WHERE basket_id = $1",
@@ -94,7 +99,7 @@ module.exports = class PostgreSQL {
       return result.rowCount > 0;
     } catch (e) {
       console.error(`Couldn't clear basket: ${e}`);
-      return false;
+      throw e;
     }
   }
 
@@ -102,9 +107,7 @@ module.exports = class PostgreSQL {
   async addRequest(urlEndpoint, headers, method, mongoDocumentId) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
-      if (basketId === false) {
-        throw new Error("Could not add request: endpoint does not exist");
-      }
+      if (basketId == null) return false;
 
       let requestAdded = await pgQuery(
         "INSERT INTO requests (basket_id, headers, method, body) VALUES ($1, $2, $3, $4)",
@@ -118,7 +121,7 @@ module.exports = class PostgreSQL {
       return requestAdded.rowCount > 0;
     } catch (e) {
       console.error(`Couldn't add request: ${e}`);
-      return false;
+      throw e;
     }
   }
 
@@ -126,9 +129,7 @@ module.exports = class PostgreSQL {
   async getRequests(urlEndpoint) {
     try {
       let basketId = await this.getBasketId(urlEndpoint);
-      if (basketId === false) {
-        throw new Error("Could not get requests: endpoint does not exist");
-      }
+      if (basketId == null) return [];
 
       let result = await pgQuery(
         "SELECT id, arrival_timestamp as timestamp, headers, method, body FROM requests WHERE basket_id = $1 ORDER BY timestamp DESC",
@@ -138,7 +139,7 @@ module.exports = class PostgreSQL {
       return result.rows;
     } catch (e) {
       console.error(`Couldn't get requests: ${e}`);
-      return false;
+      throw e;
     }
   }
 };
