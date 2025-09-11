@@ -1,9 +1,5 @@
-//Import environment variables
-const config = require("./lib/config");
-const HOST = config.HOST;
-const PORT = config.PORT;
-
-const path = require("path");
+const HOST = '0.0.0.0'; 
+const PORT = Number(process.env.PORT) || 3000;  
 
 //Create an express server
 const express = require("express");
