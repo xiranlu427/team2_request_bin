@@ -35,14 +35,13 @@ const {
 server.use(express.text({ type: "*/*" }));
 
 //Handles requests to clear the basket
-server.put("/api/baskets/:endpoint", async (req, res) => {
+server.put("/api/baskets/:endpoint", async (req, res, next) => {
   let endpoint = req.params.endpoint;
   let errorMessage = "";
 
   try {
     if (!(await pgApi.basketExists(endpoint))) {
-      errorMessage = "Endpoint does not exist.";
-      throw new Error(errorMessage);
+      return res.status(404).send("Endpoint does not exist.");
     }
 
     //Get the requests from PG, then clear the bodies from mongo
@@ -51,32 +50,35 @@ server.put("/api/baskets/:endpoint", async (req, res) => {
       if (requests[i].body) {
         let deleted = await mongoDeleteBody(requests[i].body);
 
-        if (!deleted) throw new Error("Mongo deletion issue");
+        if (!deleted) {
+          const err = new Error("Mongo deletion issue");
+          err.status = 500;
+          throw err;
+        }
       }
     }
 
     let basketCleared = await pgApi.clearBasket(endpoint);
     if (!basketCleared) {
-      let errorMessage = "Basket couldn't be cleared.";
-      throw new Error(errorMessage);
+      const err = new Error("Basket couldn't be cleared.");
+      err.status = 500;
+      throw err;
     }
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (e) {
-    console.error(e);
-    res.status(404).send(errorMessage);
+    return next(e);
   }
 });
 
 // Handles requests to delete a basket
-server.delete("/api/baskets/:endpoint", async (req, res) => {
+server.delete("/api/baskets/:endpoint", async (req, res, next) => {
   let endpoint = req.params.endpoint;
   let errorMessage = "";
 
   try {
     if (!(await pgApi.basketExists(endpoint))) {
-      errorMessage = "Endpoint does not exist.";
-      throw new Error(errorMessage);
+      return res.status(404).send("Endpoint does not exist.");
     }
 
     //Clear the basket's request bodies from mongo first
@@ -86,38 +88,42 @@ server.delete("/api/baskets/:endpoint", async (req, res) => {
       if (requests[i].body) {
         let deleted = await mongoDeleteBody(requests[i].body);
 
-        if (!deleted) throw new Error("Mongo deletion issue");
+        if (!deleted) {
+          const err = new Error("Mongo deletion issue");
+          err.status = 500;
+          throw err;
+        }
       }
     }
 
     let basketDeleted = await pgApi.deleteBasket(endpoint);
     if (!basketDeleted) {
-      errorMessage = "Basket couldn't be deleted.";
-      throw new Error(errorMessage);
+      const err = new Error("Basket couldn't be deleted.");
+      err.status = 500;
+      throw err;
     }
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (e) {
-    console.error(e);
-    res.status(404).send(errorMessage);
+    return next(e);
   }
 });
 
 // Handles requests to get all of the requests in a basket
-server.get("/api/baskets/:endpoint", async (req, res) => {
+server.get("/api/baskets/:endpoint", async (req, res, next) => {
   let endpoint = req.params.endpoint;
   let errorMessage = "";
 
   try {
     if (!(await pgApi.basketExists(endpoint))) {
-      errorMessage = "Endpoint does not exist.";
-      throw new Error(errorMessage);
+      return res.status(404).send("Endpoint does not exist.");
     }
 
     let requests = await pgApi.getRequests(endpoint);
     if (!requests) {
-      errorMessage = "Requests couldn't be fetched.";
-      throw new Error(errorMessage);
+      const err = new Error("Requests couldn't be fetched.");
+      err.status = 500;
+      throw err;
     }
 
     // Get each request's body from mongo and replace the body property on it with what mongo returns
@@ -128,17 +134,14 @@ server.get("/api/baskets/:endpoint", async (req, res) => {
       }
     }
 
-    res
-      .setHeader("Content-Type", "application/json")
-      .send(JSON.stringify(requests));
+    return res.json(requests);
   } catch (e) {
-    console.error(e);
-    res.status(404).send(errorMessage);
+    return next(e);
   }
 });
 
 // Handles requests to create a new basket
-server.post("/api/baskets/:endpoint", async (req, res) => {
+server.post("/api/baskets/:endpoint", async (req, res, next) => {
   let endpoint = req.params.endpoint;
   let errorMessage = "";
 
@@ -146,32 +149,28 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
     if (await pgApi.basketExists(endpoint)) {
       // 409 CONFLICT
       errorMessage = "Could not create basket: endpoint already exists.";
-      res.status(409).send(errorMessage);
-      throw new Error(errorMessage);
+      return res.status(409).send(errorMessage);
     }
 
     if (endpointIsTooLong(endpoint)) {
       // 414 URI TOO LONG
       errorMessage =
         "Could not create basket: endpoint length cannot exceed 100 characters.";
-      res.status(414).send(errorMessage);
-      throw new Error(errorMessage);
+      return res.status(414).send(errorMessage);
     }
 
     if (endpointContainsSymbols(endpoint)) {
       // 400 BAD REQUEST
       errorMessage =
         "Could not create basket: endpoint can only contain alphanumeric characters.";
-      res.status(400).send(errorMessage);
-      throw new Error(errorMessage);
+      return res.status(400).send(errorMessage);
     }
 
     if (endpointIsReserved(endpoint)) {
       // 403 FORBIDDEN - /web and /api are reserved
       errorMessage =
         "Could not create basket: endpoint conflicts with reserved system path.";
-      res.status(403).send(errorMessage);
-      throw new Error(errorMessage);
+      return res.status(403).send(errorMessage);
     }
 
     let newBasket = await pgApi.createBasket(endpoint);
@@ -180,10 +179,9 @@ server.post("/api/baskets/:endpoint", async (req, res) => {
       throw new Error(errorMessage);
     }
 
-    res.status(201).send();
+    return res.sendStatus(201);
   } catch (e) {
-    console.error(e);
-    res.status(404).send(errorMessage);
+    return next(e);
   }
 });
 
@@ -216,7 +214,7 @@ webSocketServer.on("connection", (ws) => {
 });
 
 //Handles any type of request to the exposed endpoint, sends request data to request table (webhooks use this endpoint)
-server.all("/api/:endpoint", async (req, res) => {
+server.all("/api/:endpoint", async (req, res, next) => {
   let headers = JSON.stringify(req.headers);
   let method = req.method;
   let body = req.body; //Stored in Mongo
@@ -225,8 +223,7 @@ server.all("/api/:endpoint", async (req, res) => {
 
   try {
     if (!(await pgApi.basketExists(endpoint))) {
-      errorMessage = "Endpoint does not exist.";
-      throw new Error(errorMessage);
+      return res.status(404).send("Endpoint does not exist.");
     }
 
     //Add the body to Mongo and get a document ID
@@ -240,8 +237,9 @@ server.all("/api/:endpoint", async (req, res) => {
       documentId
     );
     if (!requestAdded) {
-      errorMessage = "Request couldn't be added.";
-      throw new Error(errorMessage);
+      const err = new Error("Request couldn't be added.");
+      err.status = 500;
+      throw err;
     }
 
     // Sends a request directly to client using the WebSocket connection
@@ -252,19 +250,20 @@ server.all("/api/:endpoint", async (req, res) => {
       }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (e) {
-    console.error(e);
-    res.status(404).send(errorMessage);
+    return next(e);
   }
 });
 
 //Error handler (Last Line of Defense)
-server.use((error, _req, res, _next) => {
-  console.log(error);
-  res.status(404).render("error", { error: error });
+server.use((err, req, res, next) => {
+  console.error(err);
+  if (res.headersSent) return next(err);
+  const status = err.status || 500;
+  res.status(status).json({ error: err.message || "Internal Server Error" });
 });
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, HOST, () => {
   console.log(`Your server is now live on ${HOST}:${PORT}`);
 });
