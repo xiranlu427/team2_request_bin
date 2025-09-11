@@ -8,6 +8,6 @@ module.exports = {
   },
 
   endpointIsReserved(urlEndpoint) {
-    return urlEndpoint === 'web' || urlEndpoint === 'api';
+    return urlEndpoint === 'health';
   }
 }
