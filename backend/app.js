@@ -128,7 +128,7 @@ server.get("/api/baskets/:endpoint", async (req, res, next) => {
 
     // Get each request's body from mongo and replace the body property on it with what mongo returns
     for (let i = 0; i < requests.length; i++) {
-      if (requests[i].id) {
+      if (requests[i].body) {
         let mongoDocId = requests[i].body;
         requests[i].body = await mongoGetBody(mongoDocId);
       }
